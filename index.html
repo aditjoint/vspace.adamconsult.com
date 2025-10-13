@@ -2,27 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VSPACE Digital Signage</title>
-  <link rel="stylesheet" href="styles/style.css" />
-  <link rel="manifest" href="manifest.json" />
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-</head>
-<body>
-  <header class="app-header">
-    <img src="assets/logo.png" alt="VSPACE Logo" class="logo" />
-    <h1>VSPACE Digital Signage Dashboard</h1>
-    <div class="controls">
-      <button id="fullscreenBtn">🖥 Fullscreen</button>
-      <button id="pipBtn">🪟 Picture-in-Picture</button>
-      <button id="castBtn">📺 Cast to TV</button>
-
-  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
-  <title>view SPACE/title>
+  <title>VSPACE Digital Signage</title>
   <meta name="description" content="Providing comprehensive solutions for Film and Entertainment fields including Scriptwriting, Consulting, Translation, and language Services." />
 
   <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/responsive.css" />
   <link rel="stylesheet" href="css/protect.css" />
@@ -33,12 +18,54 @@
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
 
+  <!-- Web App Manifest -->
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Google Cast -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+</head>
+<body>
+
+<header class="app-header">
+  <img src="assets/logo.png" alt="VSPACE Logo" class="logo" />
+  <h1>VSPACE Digital Signage Dashboard</h1>
+  <div class="controls">
+    <button id="fullscreenBtn">🖥 Fullscreen</button>
+    <button id="pipBtn">🪟 Picture-in-Picture</button>
+    <button id="castBtn">📺 Cast to TV</button>
+  </div>
+</header>
+
+<main class="video-grid">
+  <video src="assets/video1.mp4" autoplay muted loop></video>
+  <video src="assets/video2.mp4" autoplay muted loop></video>
+  <video src="assets/video3.mp4" autoplay muted loop></video>
+  <video src="assets/video4.mp4" autoplay muted loop></video>
+  <video src="assets/video5.mp4" autoplay muted loop></video>
+  <video src="assets/video6.mp4" autoplay muted loop></video>
+  <video src="assets/video7.mp4" autoplay muted loop></video>
+  <video src="assets/video8.mp4" autoplay muted loop></video>
+  <video src="assets/video9.mp4" autoplay muted loop></video>
+</main>
+
+<!-- Call to Action / Links to Display Modes -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Explore Digital Signage Views</h2>
+    <p>Open the view that fits your display needs:</p>
+    <div class="cta-buttons">
+      <a href="display.html" class="btn btn-primary" target="_blank">Display Mode</a>
+      <a href="screen.html" class="btn btn-secondary" target="_blank">Screen Mode</a>
+      <a href="wall.html" class="btn btn-tertiary" target="_blank">Wall Mode</a>
+      <a href="kiosk.html" class="btn btn-quaternary" target="_blank">Kiosk Mode</a>
     </div>
-  </header>
+  </div>
+</section>
 
+<!-- Footer -->
+<div id="footer-placeholder"></div>
 
-  
-<!-- 🔒 Inline Protection Fallback -->
+<!-- Inline Protection -->
 <style>
   html, body {
     -webkit-user-select: none;
@@ -54,117 +81,30 @@
   }
 </style>
 
-<!-- Header -->
-<div id="header-placeholder"></div>
+<!-- Scripts -->
+<script src="scripts/app.js"></script>
+<script src="scripts/cast.js"></script>
 
-<!-- Hero Section -->
-<section class="hero">
-  <div class="container">
-    <div class="hero-content">
-      <div class="hero-text">
-
-        <h1 class="hero-title">SPACE Productions</h1>
-        <h2 class="hero-subtitle-large">Your Trusted Partner for Innovative Script Writing & Hindi Language Consultant</h2>
-        
-        <!-- Hero Image -->
-        <div class="hero-image">
-          <img src="../images/bg32.jpg" 
-               alt="Greetings from PRAMA Productions Innovative creative writing services" />
-
-
-          <p class="hero-description">
-       Comprehensive Video Player
-        </p>
-        <p>🤝 Partner with us to accelerate your automation journey.</p>
-          
-        </div>        
-        <div class="hero-buttons">
-          <a href="about.html" class="btn btn-primary">About</a>
-          <a href="contact.html" class="btn btn-secondary">Contact Us</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-  <main class="video-grid">
-    <video src="assets/video1.mp4" autoplay muted loop></video>
-    <video src="assets/video2.mp4" autoplay muted loop></video>
-    <video src="assets/video3.mp4" autoplay muted loop></video>
-    <video src="assets/video1.mp4" autoplay muted loop></video>
-    <video src="assets/video2.mp4" autoplay muted loop></video>
-    <video src="assets/video3.mp4" autoplay muted loop></video>
-    <video src="assets/video1.mp4" autoplay muted loop></video>
-    <video src="assets/video2.mp4" autoplay muted loop></video>
-    <video src="assets/video3.mp4" autoplay muted loop></video>
-  </main>
-
-
-
-  <!-- Call to Action -->
-<section class="cta-section">
-  <div class="container">
-    <div class="cta-content">
-      <h2>Ready to Explore innovative Film Scripting and Improvised Contents</h2>
-      <p>Connect with us today to bring your creative vision to life and create lasting impact.</p>
-      <a href="contact.html" class="btn btn-primary">Get In Touch</a>
-    </div>
-  </div>
-</section>
-
-<!-- Footer -->
-<div id="footer-placeholder"></div>
-
-<!-- Dynamic Header/Footer Loading and Script Initialization -->
+<!-- Optional: Dynamic Header/Footer -->
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    // Load header
-    fetch("/header.html")
-      .then(res => res.text())
-      .then(html => {
-        const headerEl = document.getElementById("header-placeholder");
-        if (headerEl) headerEl.innerHTML = html;
+document.addEventListener("DOMContentLoaded", function () {
+  // Load header
+  fetch("/header.html")
+    .then(res => res.text())
+    .then(html => {
+      const headerEl = document.getElementById("header-placeholder");
+      if (headerEl) headerEl.innerHTML = html;
+    });
 
-        const toggle = document.getElementById("menu-toggle");
-        const nav = document.getElementById("mobile-menu");
-        if (toggle && nav) {
-          toggle.addEventListener("click", () => nav.classList.toggle("active"));
-        }
-        if (typeof initDropdowns === "function") initDropdowns();
-      });
-
-    // Load footer
-    fetch("/footer.html")
-      .then(res => res.text())
-      .then(html => {
-        const footerEl = document.getElementById("footer-placeholder");
-        if (footerEl) footerEl.innerHTML = html;
-
-        const protect = document.createElement("script");
-        protect.src = "/js/imgTextProtect.js";
-        document.body.appendChild(protect);
-      });
-
-    // Load main script
-    const main = document.createElement("script");
-    main.src = "/js/main.js";
-    main.onload = () => {
-      if (typeof initTabs === "function") initTabs();
-      if (typeof initHeroAnimation === "function") initHeroAnimation();
-    };
-    document.body.appendChild(main);
-
-    // Load dropdown script
-    const dropdown = document.createElement("script");
-    dropdown.src = "/js/dropdown.js";
-    document.body.appendChild(dropdown);
-    <script src="scripts/app.js"></script>
-    <script src="scripts/cast.js"></script>
-    
-  });
+  // Load footer
+  fetch("/footer.html")
+    .then(res => res.text())
+    .then(html => {
+      const footerEl = document.getElementById("footer-placeholder");
+      if (footerEl) footerEl.innerHTML = html;
+    });
+});
 </script>
 
 </body>
 </html>
-
