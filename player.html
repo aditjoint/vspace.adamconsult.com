@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADAM Signage Player</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      height: 100vh;
+      width: 100vw;
+      gap: 2px;
+    }
+    .screen {
+      background: #111;
+      position: relative;
+      overflow: hidden;
+    }
+    .screen video, .screen iframe {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .fullscreen {
+      grid-column: 1 / 10 !important;
+      grid-row: 1 / 10 !important;
+      z-index: 99;
+    }
+    .control-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 9x9 grid -->
+  <script>
+    for (let i = 0; i < 81; i++) {
+      document.write(`
+        <div class="screen" id="screen${i}">
+          <button class="control-btn" onclick="toggleFull(${i})">⛶</button>
+          <iframe src="" frameborder="0" allowfullscreen></iframe>
+        </div>
+      `);
+    }
+
+    // sample URLs for demo
+    const sampleStreams = [
+      "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1",
+      "https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=1",
+      "https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1"
+    ];
+
+    // assign videos randomly
+    const iframes = document.querySelectorAll('iframe');
+    iframes.forEach((iframe, i) => {
+      iframe.src = sampleStreams[i % sampleStreams.length];
+    });
+
+    // fullscreen toggle
+    function toggleFull(i) {
+      const target = document.getElementById(`screen${i}`);
+      document.querySelectorAll('.screen').forEach(el => el.classList.remove('fullscreen'));
+      target.classList.toggle('fullscreen');
+    }
+  </script>
+</body>
+</html>
