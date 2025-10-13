@@ -1,94 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>VSPACE Digital Signage</title>
 
-  <!-- Font Awesome -->
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+  <link rel="stylesheet" href="css/protect.css" />
+
+  <!-- Font Awesome & Google Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Chrome Cast SDK -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 </head>
 <body>
 
-<!-- 🔒 Inline Protection Fallback -->
+<!-- Inline Protection Fallback -->
 <style>
-  html, body {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-  input, textarea, select, label, a, button {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
-  }
+  html, body { user-select: none; }
+  input, textarea, select, label, a, button { user-select: text; }
 </style>
 
 <!-- Header -->
 <div id="header-placeholder"></div>
 
-  <!-- Control Buttons -->
-  <header class="app-header">
-    <img src="assets/logo.png" alt="VSPACE Logo" class="logo" />
-    <h1>VSPACE Digital Signage Dashboard</h1>
-    <div class="controls">
-      <button id="fullscreenBtn">🖥 Fullscreen</button>
-      <button id="pipBtn">🪟 PiP</button>
-      <button id="castBtn">📺 Cast to TV</button>
+<!-- Control Buttons -->
+<header class="app-header">
+  <img src="assets/logo.png" alt="VSPACE Logo" class="logo" />
+  <h1>VSPACE Digital Signage Dashboard</h1>
+  <div class="controls">
+    <button id="fullscreenBtn">🖥 Fullscreen</button>
+    <button id="pipBtn">🪟 PiP</button>
+    <button id="castBtn">📺 Cast to TV</button>
+  </div>
+</header>
+
+<!-- Video Grid -->
+<main class="video-grid">
+  <video src="assets/video1.mp4" autoplay muted loop></video>
+  <video src="assets/video2.mp4" autoplay muted loop></video>
+  <video src="assets/video3.mp4" autoplay muted loop></video>
+  <video src="assets/video4.mp4" autoplay muted loop></video>
+  <video src="assets/video5.mp4" autoplay muted loop></video>
+  <video src="assets/video6.mp4" autoplay muted loop></video>
+  <video src="assets/video7.mp4" autoplay muted loop></video>
+  <video src="assets/video8.mp4" autoplay muted loop></video>
+  <video src="assets/video9.mp4" autoplay muted loop></video>
+</main>
+
+<!-- Call to Action Section -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Explore Digital Signage Modes</h2>
+    <div class="cta-buttons">
+      <a href="main/services/display.html" class="btn btn-primary">Display Mode</a>
+      <a href="main/services/screen.html" class="btn btn-primary">Screen Mode</a>
+      <a href="main/services/wall.html" class="btn btn-primary">Wall Mode</a>
+      <a href="main/services/kiosk.html" class="btn btn-primary" target="_blank">Kiosk Mode</a>
     </div>
-  </header>
+  </div>
+</section>
 
-  <!-- Video Grid -->
-  <main class="video-grid">
-    <video src="assets/video1.mp4" autoplay muted loop></video>
-    <video src="assets/video2.mp4" autoplay muted loop></video>
-    <video src="assets/video3.mp4" autoplay muted loop></video>
-    <video src="assets/video4.mp4" autoplay muted loop></video>
-    <video src="assets/video5.mp4" autoplay muted loop></video>
-    <video src="assets/video6.mp4" autoplay muted loop></video>
-    <video src="assets/video7.mp4" autoplay muted loop></video>
-    <video src="assets/video8.mp4" autoplay muted loop></video>
-    <video src="assets/video9.mp4" autoplay muted loop></video>
-  </main>
+<!-- Footer -->
+<div id="footer-placeholder"></div>
 
-  <!-- Call to Action Section -->
-  <section class="cta-section">
-    <div class="container">
-      <h2>Explore Digital Signage Modes</h2>
-      <div class="cta-buttons">
-        <a href="display.html" class="btn btn-primary">Display Mode</a>
-        <a href="screen.html" class="btn btn-primary">Screen Mode</a>
-        <a href="wall.html" class="btn btn-primary">Wall Mode</a>
-        <a href="kiosk.html" class="btn btn-primary" target="_blank">Kiosk Mode</a>
-      </div>
-    </div>
-  </section>
+<!-- Scripts -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Load Header
+  fetch("header.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("header-placeholder").innerHTML = html;
+    });
 
-    // Load footer
-    fetch("/footer.html")
-      .then(res => res.text())
-      .then(html => {
-        const footerEl = document.getElementById("footer-placeholder");
-        if (footerEl) footerEl.innerHTML = html;
+  // Load Footer
+  fetch("footer.html")
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById("footer-placeholder").innerHTML = html;
 
-        const protect = document.createElement("script");
-        protect.src = "/js/imgTextProtect.js";
-        document.body.appendChild(protect);
-      });
+      // Load image/text protection if needed
+      const protect = document.createElement("script");
+      protect.src = "js/imgTextProtect.js";
+      document.body.appendChild(protect);
+    });
 
-    // Load main script
-    const main = document.createElement("script");
-    main.src = "/js/main.js";
-    main.onload = () => {
-      if (typeof initTabs === "function") initTabs();
-      if (typeof initHeroAnimation === "function") initHeroAnimation();
-    };
-    document.body.appendChild(main);
+  // Load main script
+  const main = document.createElement("script");
+  main.src = "js/main.js";
+  document.body.appendChild(main);
 
-    // Load dropdown script
-    const dropdown = document.createElement("script");
-    dropdown.src = "/js/dropdown.js";
-    document.body.appendChild(dropdown);
-  });
+  // Load app.js (PiP, Fullscreen, Cast features)
+  const app = document.createElement("script");
+  app.src = "js/app.js";
+  document.body.appendChild(app);
+
+  // Load dropdown script
+  const dropdown = document.createElement("script");
+  dropdown.src = "js/dropdown.js";
+  document.body.appendChild(dropdown);
+});
 </script>
 
 </body>
