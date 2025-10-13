@@ -2,6 +2,103 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VSpace Digital Signage | ADAM Consult</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script defer src="app.js"></script>
+  <script defer src="cast.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-section">
+      <img src="assets/logo.png" alt="VSpace Logo" class="logo">
+      <h1>VSpace Digital Signage</h1>
+    </div>
+    <div class="controls">
+      <button id="fullscreenBtn">⛶ Full Screen</button>
+      <button id="pipBtn">📺 Picture-in-Picture</button>
+      <button id="castBtn">📡 Cast to TV</button>
+    </div>
+  </header>
+
+  <!-- Video Wall -->
+  <main class="video-grid">
+    <video id="mainVideo" autoplay loop muted playsinline>
+      <source src="assets/sample.mp4" type="video/mp4" />
+      Your browser does not support video playback.
+    </video>
+    <video autoplay loop muted playsinline>
+      <source src="assets/sample2.mp4" type="video/mp4" />
+    </video>
+    <video autoplay loop muted playsinline>
+      <source src="assets/sample3.mp4" type="video/mp4" />
+    </video>
+  </main>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <h2>Launch Digital Signage Services</h2>
+    <div class="cta-buttons">
+      <a href="services/display.html" class="btn">Display Wall</a>
+      <a href="services/screen.html" class="btn">Screen Mode</a>
+      <a href="services/wall.html" class="btn">Video Wall</a>
+      <a href="services/kiosk.html" target="_blank" class="btn">Open Kiosk Mode</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-flex">
+      <div class="footer-left">
+        <h3>About VSpace</h3>
+        <p>VSpace is an advanced multi-display kiosk and casting solution for digital signage, built by ADAM Consult.</p>
+      </div>
+      <div class="footer-center">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="services/display.html">Display</a></li>
+          <li><a href="services/screen.html">Screen</a></li>
+          <li><a href="services/wall.html">Wall</a></li>
+          <li><a href="services/kiosk.html">Kiosk</a></li>
+        </ul>
+      </div>
+      <div class="footer-qr">
+        <h3>Scan to Access</h3>
+        <img src="assets/qr.png" alt="QR Code" />
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 ADAM Consult | vspace.adamconsult.com</p>
+    </div>
+  </footer>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>VSPACE Digital Signage</title>
 
