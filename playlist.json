@@ -1,0 +1,15 @@
+{
+  "default": {
+    "name": "Lobby Loop",
+    "items": [
+      { "type":"video", "src":"https://example.com/ads/intro.mp4", "duration": 20 },
+      { "type":"image", "src":"https://raw.githubusercontent.com/your/repo/main/assets/promo.jpg", "duration": 12 },
+      { "type":"hls", "src":"https://cdn.example.com/live/playlist.m3u8", "duration": 60 }
+    ],
+    "loop": true
+  },
+  "portrait-screen": {
+    "name": "Portrait Kiosk",
+    "items":[ ... ]
+  }
+}
