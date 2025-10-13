@@ -1,125 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ADAM Signage Player</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      grid-template-rows: repeat(9, 1fr);
-      height: 100vh;
-      width: 100vw;
-      gap: 2px;
-    }
-    .screen {
-      background: #111;
-      position: relative;
-      overflow: hidden;
-    }
-    .screen video, .screen iframe {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .fullscreen {
-      grid-column: 1 / 10 !important;
-      grid-row: 1 / 10 !important;
-      z-index: 99;
-    }
-    .control-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      padding: 2px 5px;
-      font-size: 10px;
-    }
-  </style>
-</head>
-<body>
-  <!-- 9x9 grid -->
- <script>
-  for (let i = 0; i < 81; i++) {
-    document.write(`
-      <div class="screen" id="screen${i}">
-        <iframe src="" frameborder="0" allowfullscreen></iframe>
-      </div>
-    `);
-  }
-
-  const iframes = document.querySelectorAll('iframe');
-
-  // 🔹 BroadcastChannel Receiver
-  const channel = new BroadcastChannel('signage-control');
-  channel.onmessage = (event) => {
-    const { action, index, url } = event.data;
-
-    switch(action) {
-      case 'play':
-        iframes[index].src = url;
-        break;
-      case 'fullscreen':
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('fullscreen'));
-        document.getElementById(`screen${index}`).classList.add('fullscreen');
-        break;
-      case 'broadcast':
-        iframes.forEach(f => f.src = url);
-        break;
-      case 'clear':
-        iframes.forEach(f => f.src = <!DOCTYPE html>
-<html lang="en">
-<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage Wall</title>
+<title>ADAM Signage Player</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
-  body { margin:0; background:#000; display:grid; grid-template-columns:repeat(9,1fr); grid-auto-rows:calc(100vh/9); gap:2px; }
-  iframe { width:100%; height:100%; border:none; }
+body { display:grid; grid-template-columns:repeat(9,1fr); grid-gap:4px; margin:0; background:#000; }
+.tile-container { position: relative; width:100%; padding-top:56.25%; }
+.tile-container iframe,
+.tile-container video,
+.tile-container img { position:absolute; top:0; left:0; width:100%; height:100%; border-radius:6px; object-fit:cover; }
+.fullscreen { position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999; }
 </style>
 </head>
 <body>
-  <!-- 81 tiles -->
-  <script>
-    const numTiles = 81;
-    const tiles = [];
-    for(let i=0;i<numTiles;i++){
-      const iframe = document.createElement('iframe');
-      iframe.src = ''; // initial empty
-      document.body.appendChild(iframe);
-      tiles.push(iframe);
-    }
+<script>
+const channel = new BroadcastChannel('signage-control');
+const tilesData = [];
+const tilesElements = [];
+let playlistData = {};
 
-    // BroadcastChannel for sender control
-    const channel = new BroadcastChannel('signage-control');
-    channel.onmessage = (event) => {
-      const { action, index, url } = event.data;
-      switch(action){
-        case 'play': tiles[index].src = url; break;
-        case 'broadcast': tiles.forEach(t=>t.src=url); break;
-        case 'clear': tiles.forEach(t=>t.src=''); break;
-        case 'fullscreen':
-          tiles.forEach(t=>t.style.display='none');
-          tiles[index].style.display='block';
-          tiles[index].style.width='100%';
-          tiles[index].style.height='100%';
-          break;
-      }
-    };
-  </script>
-</body>
-</html>
+// Create 9x9 tiles
+for(let i=0;i<81;i++){
+  const container = document.createElement('div');
+  container.className = 'tile-container';
+  document.body.appendChild(container);
 
-        break;
+  const video = document.createElement('video');
+  video.autoplay = true; video.muted = true; video.controls=false;
+  container.appendChild(video);
+
+  tilesElements.push({ container, video, currentIndex:0, hls:null, iframe:null, img:null });
+
+  // Assign zones/languages
+  const zone = i < 27 ? 'Lobby' : (i < 54 ? 'Shop' : 'Conference');
+  const language = i%2===0?'en':'hi';
+  tilesData.push({ zone, language, currentItemIndex:0 });
+}
+
+// Load playlist JSON
+async function loadPlaylist() {
+  try{
+    const res = await fetch('playlists.json');
+    playlistData = await res.json();
+  }catch(e){ console.error('Failed to load playlist', e);}
+}
+loadPlaylist();
+
+// Scheduler helpers
+function getCurrentPlaylist(tile){
+  const zoneData = playlistData[tile.zone];
+  if(!zoneData) return null;
+  const langData = zoneData[tile.language] || [];
+  const now = new Date();
+  const curMin = now.getHours()*60 + now.getMinutes();
+  for(let pl of langData){
+    const [sh, sm] = pl.start.split(':').map(Number);
+    const [eh, em] = pl.end.split(':').map(Number);
+    if(curMin >= sh*60+sm && curMin < eh*60+em) return pl;
+  }
+  return null;
+}
+
+// Play content per tile
+function playTile(tileEl, playlist, index=0){
+  if(!playlist || !playlist.items || playlist.items.length===0) return;
+  const item = playlist.items[index];
+  if(!item) return;
+
+  const el = tileEl.video;
+
+  // Cleanup previous
+  if(tileEl.hls){ tileEl.hls.destroy(); tileEl.hls=null; }
+  if(tileEl.iframe){ tileEl.iframe.remove(); tileEl.iframe=null; }
+  if(tileEl.img){ tileEl.img.remove(); tileEl.img=null; }
+
+  if(item.type==='hls'){
+    if(Hls.isSupported()){
+      const hls = new Hls();
+      hls.loadSource(item.src);
+      hls.attachMedia(el);
+      tileEl.hls = hls;
+      el.style.display='block';
+    } else {
+      el.src = item.src;
+      el.style.display='block';
     }
-  };
+  } else if(item.type==='video'){
+    el.src = item.src;
+    el.style.display='block';
+  } else if(item.type==='youtube'){
+    el.style.display='none';
+    const iframe = document.createElement('iframe');
+    iframe.src = item.src.includes('embed')?item.src:`https://www.youtube.com/embed/${item.src.split('v=')[1]}?autoplay=1&mute=1&controls=0`;
+    iframe.allow = 'autoplay; fullscreen';
+    tileEl.container.appendChild(iframe);
+    tileEl.iframe = iframe;
+  } else if(item.type==='image'){
+    el.style.display='none';
+    const img = document.createElement('img');
+    img.src = item.src;
+    tileEl.container.appendChild(img);
+    tileEl.img = img;
+  }
+
+  // Setup next item loop
+  const duration = item.duration || 30;
+  tileEl.currentIndex = index;
+  setTimeout(()=>{
+    const nextIndex = (index+1)%playlist.items.length;
+    playTile(tileEl, playlist, nextIndex);
+  }, duration*1000);
+}
+
+// Update all tiles
+function updateTiles(){
+  tilesData.forEach((tile,i)=>{
+    const playlist = getCurrentPlaylist(tile);
+    if(playlist){
+      const tileEl = tilesElements[i];
+      playTile(tileEl, playlist, tile.currentItemIndex);
+    }
+  });
+}
+setInterval(updateTiles,10000);
+updateTiles();
+
+// BroadcastChannel overrides
+channel.onmessage = e=>{
+  const data = e.data;
+  if(data.action==='play' && data.index!==undefined){
+    playTile(tilesElements[data.index], {items:[{type:'video', src:data.url}]},0);
+  } else if(data.action==='broadcast'){
+    tilesElements.forEach(t=>playTile(t,{items:[{type:'video', src:data.url}]},0));
+  } else if(data.action==='clear'){
+    tilesElements.forEach(t=>{ t.video.pause(); if(t.hls)t.hls.destroy(); if(t.iframe)t.iframe.remove(); if(t.img)t.img.remove(); });
+  } else if(data.action==='fullscreen' && data.index!==undefined){
+    const t = tilesElements[data.index];
+    t.container.requestFullscreen?.();
+  }
+};
 </script>
-
 </body>
 </html>
