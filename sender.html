@@ -57,19 +57,26 @@
 </head>
 <body>
   <h1>ADAM Digital Signage Control Panel</h1>
+
   <div class="control-bar">
     <input id="globalUrl" type="text" placeholder="Enter YouTube or image URL to push all screens">
     <button onclick="broadcastAll()">Broadcast All</button>
     <button onclick="clearAll()">Clear All</button>
+    <button onclick="castWall()">Cast to Chromecast</button>
   </div>
 
   <div class="grid" id="grid"></div>
 
+  <!-- Load Google Cast Sender SDK -->
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
   <script>
-    // Create BroadcastChannel
+    // -------------------------
+    // BroadcastChannel for player control
+    // -------------------------
     const channel = new BroadcastChannel('signage-control');
 
-    // Build 9x9 grid
+    // Build 9x9 grid (81 tiles)
     const grid = document.getElementById('grid');
     for (let i = 0; i < 81; i++) {
       const div = document.createElement('div');
@@ -96,9 +103,7 @@
 
     function sendTo(index) {
       const url = normalizeYouTubeUrl(document.getElementById(`url${index}`).value.trim());
-      if (url) {
-        channel.postMessage({ action: 'play', index, url });
-      }
+      if (url) channel.postMessage({ action: 'play', index, url });
     }
 
     function goFull(index) {
@@ -112,6 +117,33 @@
 
     function clearAll() {
       channel.postMessage({ action: 'clear' });
+    }
+
+    // -------------------------
+    // Chromecast Cast Button
+    // -------------------------
+    function castWall() {
+      const appID = 'CC1AD845'; // Default Media Receiver
+      const sessionRequest = new chrome.cast.SessionRequest(appID);
+      const apiConfig = new chrome.cast.ApiConfig(sessionRequest, null, null);
+      chrome.cast.initialize(apiConfig, 
+        () => console.log('Cast initialized'),
+        e => console.error('Cast init error:', e)
+      );
+
+      chrome.cast.requestSession(session => {
+        console.log('Cast session started', session);
+        // Cast the receiver.html URL
+        const mediaInfo = new chrome.cast.media.MediaInfo(
+          'https://YOUR_GITHUB_PAGES/receiver.html', // Replace with your hosted receiver URL
+          'text/html'
+        );
+        const request = new chrome.cast.media.LoadRequest(mediaInfo);
+        session.loadMedia(request,
+          () => console.log('Receiver loaded on Chromecast'),
+          e => console.error('Error loading receiver:', e)
+        );
+      }, e => console.error('Session request error:', e));
     }
   </script>
 </body>
