@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADAM Enterprise Signage - Admin Panel</title>
+<style>
+:root { --primary: #007bff; --dark: #222; --light: #f8f9fa; }
+body { font-family: system-ui, sans-serif; background: var(--dark); color: var(--light); margin: 0; padding: 20px; }
+.container { max-width: 1400px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.header h1 { font-size: 1.8rem; color: var(--primary); }
+.controls { display: flex; gap: 10px; flex-wrap: wrap; }
+.control-group { display: flex; gap: 5px; align-items: center; }
+input, select, button { padding: 8px 12px; border: none; border-radius: 4px; }
+input[type="text"] { width: 200px; }
+button { background: var(--primary); color: white; cursor: pointer; }
+button:hover { opacity: 0.9; }
+.filters { display: flex; gap: 15px; margin: 15px 0; flex-wrap: wrap; }
+.devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+.device-card { background: #333; padding: 15px; border-radius: 8px; }
+.device-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+.status { padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; }
+.online { background: #28a745; }
+.offline { background: #dc3545; }
+.device-info { margin: 10px 0; }
+.content-assign { margin-top: 10px; }
+.content-assign input { width: 100%; margin: 5px 0; }
+.cast-wall { background: #28a745; margin-top: 10px; width: 100%; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>ADAM Enterprise Signage - Admin Panel</h1>
+    <div class="controls">
+      <button onclick="refreshDevices()">Refresh</button>
+      <button onclick="castToWall()">Cast to Wall</button>
+      <button onclick="syncAll()">Sync All</button>
+    </div>
+  </div>
+
+  <div class="filters">
+    <div class="control-group">
+      <label>State:</label>
+      <select id="stateFilter" onchange="filterDevices()">
+        <option value="all">All States</option>
+        <option value="Maharashtra">Maharashtra</option>
+        <option value="Tamil Nadu">Tamil Nadu</option>
+        <option value="Karnataka">Karnataka</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Region:</label>
+      <select id="regionFilter" onchange="filterDevices()">
+        <option value="all">All Regions</option>
+        <option value="Mumbai Metro">Mumbai Metro</option>
+        <option value="Pune">Pune</option>
+        <option value="Chennai">Chennai</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Location:</label>
+      <select id="locationFilter" onchange="filterDevices()">
+        <option value="all">All Locations</option>
+        <option value="Corporate Office">Corporate Office</option>
+        <option value="Retail Store">Retail Store</option>
+        <option value="Factory">Factory</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Language:</label>
+      <select id="languageFilter" onchange="filterDevices()">
+        <option value="all">All Languages</option>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="mr">Marathi</option>
+        <option value="ta">Tamil</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="devices-grid" id="devicesGrid">
+    <!-- Devices will be populated here -->
+  </div>
+</div>
+
+<script>
+// Mock device data - in production, this would come from API
+const devices = [
+  { id: 'DEV-001', name: 'Corporate Lobby Display', state: 'Maharashtra', region: 'Mumbai Metro', location: 'Corporate Office', language: 'en', status: 'online', ip: '192.168.1.101', model: 'Chromebox' },
+  { id: 'DEV-002', name: 'Factory Floor Display', state: 'Maharashtra', region: 'Mumbai Metro', location: 'Factory', language: 'hi', status: 'online', ip: '192.168.1.102', model: 'Chromebit' },
+  { id: 'DEV-003', name: 'Retail Store Window', state: 'Maharashtra', region: 'Pune', location: 'Retail Store', language: 'mr', status: 'online', ip: '192.168.1.103', model: 'Chromecast' },
+  { id: 'DEV-004', name: 'Conference Room TV', state: 'Tamil Nadu', region: 'Chennai', location: 'Corporate Office', language: 'ta', status: 'offline', ip: '192.168.1.104', model: 'Chromecast' },
+  { id: 'DEV-005', name: 'Cafeteria Display', state: 'Karnataka', region: 'Bangalore', location: 'Corporate Office', language: 'en', status: 'online', ip: '192.168.1.105', model: 'Chromebox' }
+];
+
+// Initialize devices grid
+function initDevices() {
+  const grid = document.getElementById('devicesGrid');
+  grid.innerHTML = '';
+  devices.forEach(device => {
+    const card = document.createElement('div');
+    card.className = 'device-card';
+    card.innerHTML = `
+      <div class="device-header">
+        <strong>${device.name}</strong>
+        <span class="status ${device.status}">${device.status}</span>
+      </div>
+      <div class="device-info">
+        <div>ID: ${device.id}</div>
+        <div>Model: ${device.model}</div>
+        <div>IP: ${device.ip}</div>
+        <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
+        <div>Language: ${device.language}</div>
+      </div>
+      <div class="content-assign">
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
+      </div>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// Filter devices based on selections
+function filterDevices() {
+  const state = document.getElementById('stateFilter').value;
+  const region = document.getElementById('regionFilter').value;
+  const location = document.getElementById('locationFilter').value;
+  const language = document.getElementById('languageFilter').value;
+  
+  const filtered = devices.filter(device => {
+    return (state === 'all' || device.state === state) &&
+           (region === 'all' || device.region === region) &&
+           (location === 'all' || device.location === location) &&
+           (language === 'all' || device.language === language);
+  });
+  
+  const grid = document.getElementById('devicesGrid');
+  grid.innerHTML = '';
+  filtered.forEach(device => {
+    const card = document.createElement('div');
+    card.className = 'device-card';
+    card.innerHTML = `
+      <div class="device-header">
+        <strong>${device.name}</strong>
+        <span class="status ${device.status}">${device.status}</span>
+      </div>
+      <div class="device-info">
+        <div>ID: ${device.id}</div>
+        <div>Model: ${device.model}</div>
+        <div>IP: ${device.ip}</div>
+        <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
+        <div>Language: ${device.language}</div>
+      </div>
+      <div class="content-assign">
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
+      </div>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// Assign content to specific device
+function assignContent(deviceId) {
+  const url = document.getElementById(`content-${deviceId}`).value.trim();
+  if (!url) {
+    alert('Please enter a URL');
+    return;
+  }
+  // In production, this would send to API
+  alert(`Content assigned to ${deviceId}: ${url}`);
+}
+
+// Cast to individual device
+function castToDevice(deviceId) {
+  const device = devices.find(d => d.id === deviceId);
+  if (!device || device.status !== 'online') {
+    alert('Device is offline or not found');
+    return;
+  }
+  // In production, this would use Cast SDK
+  alert(`Casting to ${device.name} (${device.id})`);
+}
+
+// Cast to wall (all filtered devices)
+function castToWall() {
+  const state = document.getElementById('stateFilter').value;
+  const region = document.getElementById('regionFilter').value;
+  const location = document.getElementById('locationFilter').value;
+  const language = document.getElementById('languageFilter').value;
+  
+  const filtered = devices.filter(device => {
+    return (state === 'all' || device.state === state) &&
+           (region === 'all' || device.region === region) &&
+           (location === 'all' || device.location === location) &&
+           (language === 'all' || device.language === language);
+  });
+  
+  const onlineDevices = filtered.filter(d => d.status === 'online');
+  if (onlineDevices.length === 0) {
+    alert('No online devices found in the selected filters');
+    return;
+  }
+  
+  // In production, this would use Cast SDK to cast to multiple devices
+  alert(`Casting to wall: ${onlineDevices.length} online devices`);
+}
+
+// Refresh devices (simulated)
+function refreshDevices() {
+  // In production, this would fetch from API
+  alert('Refreshing device status...');
+}
+
+// Sync all devices
+function syncAll() {
+  // In production, this would sync configuration
+  alert('Syncing all devices...');
+}
+
+// Initialize on load
+window.onload = initDevices;
+</script>
+</body>
+</html>
