@@ -3,147 +3,121 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage Sender Panel</title>
+<title>ADAM Signage Control Panel</title>
 <style>
-body {
-  font-family: system-ui, sans-serif;
-  background:#0d1117;
-  color:#fff;
-  margin:0;
-  padding:20px;
-}
-h1 {
-  font-size:1.5rem;
-  margin-bottom:10px;
-}
-.control-bar {
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-bottom:20px;
-}
-.control-bar input[type=text] {
-  flex:1;
-  padding:6px 10px;
-  border-radius:4px;
-  border:none;
-}
-.control-bar button {
-  padding:6px 12px;
-  border:none;
-  border-radius:4px;
-  background:#007bff;
-  color:#fff;
-  cursor:pointer;
-}
-.control-bar button:hover {
-  background:#0056b3;
-}
-.grid {
-  display:grid;
-  grid-template-columns:repeat(9,1fr);
-  gap:4px;
-}
-.tile {
-  background:#222;
-  padding:6px;
-  border-radius:6px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-.tile input {
-  width:100%;
-  margin:4px 0;
-  padding:4px;
-  border-radius:4px;
-  border:none;
-}
-.tile button {
-  width:100%;
-  margin:2px 0;
-  padding:4px;
-  border-radius:4px;
-  border:none;
-  cursor:pointer;
-  background:#007bff;
-  color:#fff;
-}
-.tile button:hover {
-  background:#0056b3;
-}
+body { font-family: system-ui, sans-serif; background:#0d1117; color:#fff; margin:0; padding:20px; }
+h1 { font-size:1.5rem; margin-bottom:10px; }
+.grid { display:grid; grid-template-columns:repeat(9,1fr); gap:5px; }
+.tile { background:#222; padding:10px; text-align:center; border-radius:8px; cursor:pointer; transition:0.2s; }
+.tile:hover { background:#333; transform:scale(1.05); }
+input, button { padding:6px 10px; margin:5px 0; border:none; border-radius:4px; }
+input[type="text"] { width:80%; }
+button { cursor:pointer; background:#007bff; color:white; }
+button:hover { background:#0056b3; }
+.control-bar { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px; }
+select { padding:6px 10px; border-radius:4px; }
 </style>
 </head>
 <body>
-<h1>ADAM Signage Sender Panel</h1>
+<h1>ADAM Digital Signage Control Panel</h1>
 
 <div class="control-bar">
-  <input type="text" id="globalUrl" placeholder="Enter URL/YouTube/Image for all tiles">
-  <button onclick="broadcastAll()">Broadcast All</button>
-  <button onclick="clearAll()">Clear All</button>
+  <input id="globalUrl" type="text" placeholder="YouTube, image, or HLS URL">
+  <select id="zoneSelect">
+    <option value="all">All Zones</option>
+    <option value="Lobby">Lobby</option>
+    <option value="Shop">Shop Floor</option>
+    <option value="Conference">Conference</option>
+  </select>
+  <select id="langSelect">
+    <option value="all">All Languages</option>
+    <option value="en">English</option>
+    <option value="hi">Hindi</option>
+  </select>
+  <button onclick="broadcastAll()">Broadcast</button>
+  <button onclick="clearAll()">Clear</button>
+  <button onclick="castWall()">Cast Wall</button>
 </div>
 
 <div class="grid" id="grid"></div>
 
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <script>
 const channel = new BroadcastChannel('signage-control');
 const tilesData = [];
-
-// Build 9x9 grid
 const grid = document.getElementById('grid');
-for(let i=0;i<81;i++){
+
+// Build 9x9 grid (81 tiles)
+for (let i = 0; i < 81; i++) {
   const tile = document.createElement('div');
   tile.className = 'tile';
-  
   const zone = i < 27 ? 'Lobby' : (i < 54 ? 'Shop' : 'Conference');
-  const language = i%2===0 ? 'en' : 'hi';
+  const language = i % 2 === 0 ? 'en' : 'hi';
+  tilesData.push({ zone, language });
 
   tile.innerHTML = `
-    <div>Screen ${i+1}</div>
-    <input id="url${i}" type="text" placeholder="URL/YouTube/Image">
+    <div>Screen ${i+1} [${zone}/${language}]</div>
+    <input id="url${i}" type="text" placeholder="URL or YouTube">
     <button onclick="sendTo(${i})">Send</button>
     <button onclick="goFull(${i})">Full</button>
   `;
-
   grid.appendChild(tile);
-  tilesData.push({zone, language});
 }
 
-// YouTube embed helper
-function normalizeYouTubeUrl(url){
-  if(!url) return '';
-  if(url.includes('youtube.com/watch?v=')){
-    const id = url.split('v=')[1].split('&')[0];
+function normalizeYouTubeUrl(url) {
+  if (!url) return '';
+  if (url.includes("youtube.com/watch?v=")) {
+    const id = url.split("v=")[1].split("&")[0];
     return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
-  } else if(url.includes('youtu.be/')){
-    const id = url.split('youtu.be/')[1];
+  } else if (url.includes("youtu.be/")) {
+    const id = url.split("youtu.be/")[1];
     return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
   }
   return url;
 }
 
-// Per-tile send
-function sendTo(index){
+function sendTo(index) {
   const url = normalizeYouTubeUrl(document.getElementById(`url${index}`).value.trim());
-  if(url){
-    channel.postMessage({action:'play', index, url});
+  if (!url) return;
+  const { zone, language } = tilesData[index];
+  const selZone = document.getElementById('zoneSelect').value;
+  const selLang = document.getElementById('langSelect').value;
+  if ((selZone === 'all' || selZone === zone) && (selLang === 'all' || selLang === language)) {
+    channel.postMessage({ action:'play', index, url, zone, language });
   }
 }
 
-// Per-tile full screen
-function goFull(index){
-  channel.postMessage({action:'fullscreen', index});
+function goFull(index) {
+  channel.postMessage({ action:'fullscreen', index });
 }
 
-// Broadcast all
-function broadcastAll(){
+function broadcastAll() {
   const url = normalizeYouTubeUrl(document.getElementById('globalUrl').value.trim());
-  if(url) channel.postMessage({action:'broadcast', url});
+  if (!url) return;
+  const selZone = document.getElementById('zoneSelect').value;
+  const selLang = document.getElementById('langSelect').value;
+  channel.postMessage({ action:'broadcast', url, zone: selZone, language: selLang });
 }
 
-// Clear all
-function clearAll(){
-  channel.postMessage({action:'clear'});
+function clearAll() {
+  channel.postMessage({ action:'clear' });
+}
+
+// ---------------- Chromecast ----------------
+function castWall() {
+  const appID = 'CC1AD845'; // Default Receiver
+  const sessionRequest = new chrome.cast.SessionRequest(appID);
+  const apiConfig = new chrome.cast.ApiConfig(sessionRequest, null, null);
+  chrome.cast.initialize(apiConfig, ()=>console.log('Cast init'), e=>console.error(e));
+  chrome.cast.requestSession(session => {
+    console.log('Cast session started', session);
+    const mediaInfo = new chrome.cast.media.MediaInfo(
+      'https://YOUR_GITHUB_PAGES/receiver.html',
+      'text/html'
+    );
+    const request = new chrome.cast.media.LoadRequest(mediaInfo);
+    session.loadMedia(request, ()=>console.log('Receiver loaded'), e=>console.error(e));
+  }, e=>console.error(e));
 }
 </script>
 </body>
