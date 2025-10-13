@@ -3,13 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage Receiver</title>
+<title>ADAM Enterprise Signage Receiver</title>
+<script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 <style>
-body{margin:0;background:#000;}
-iframe{width:100%;height:100%;border:none;}
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
+#content-container { width: 100%; height: 100%; }
+iframe { width: 100%; height: 100%; border: none; }
 </style>
 </head>
 <body>
-<iframe src="player.html"></iframe>
+<cast-media-player></cast-media-player>
+<div id="content-container"></div>
+
+<script>
+// Initialize Cast Receiver Context
+const context = cast.framework.CastReceiverContext.getInstance();
+const playerManager = context.getPlayerManager();
+
+// Set up receiver options
+const options = new cast.framework.CastReceiverOptions();
+options.disableIdleTimeout = true;
+
+// Handle load requests
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
+  console.log('Load request received:', request);
+  
+  // Clear existing content
+  document.getElementById('content-container').innerHTML = '';
+  
+  // Handle different content types
+  if (request.media && request.media.contentId) {
+    const contentId = request.media.contentId;
+    const container = document.getElementById('content-container');
+    
+    // Handle YouTube URLs
+    if (contentId.includes('youtube.com') || contentId.includes('youtu.be')) {
+      let videoId = '';
+      if (contentId.includes('v=')) {
+        videoId = contentId.split('v=')[1].split('&')[0];
+      } else if (contentId.includes('youtu.be/')) {
+        videoId = contentId.split('youtu.be/')[1];
+      }
+      
+      if (videoId) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0`;
+        iframe.allow = 'autoplay; encrypted-media';
+        container.appendChild(iframe);
+      }
+    }
+    // Handle image URLs
+    else if (contentId.match(/\.(jpeg|jpg|gif|png|bmp)$/i)) {
+      const img = document.createElement('img');
+      img.src = contentId;
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'contain';
+      container.appendChild(img);
+    }
+    // Handle video URLs
+    else if (contentId.match(/\.(mp4|webm|ogg|mov)$/i)) {
+      const video = document.createElement('video');
+      video.src = contentId;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'contain';
+      container.appendChild(video);
+    }
+    // Handle HLS streams
+    else if (contentId.includes('.m3u8')) {
+      if (Hls.isSupported()) {
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+        container.appendChild(video);
+        
+        const hls = new Hls();
+        hls.loadSource(contentId);
+        hls.attachMedia(video);
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        const video = document.createElement('video');
+        video.src = contentId;
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'contain';
+        container.appendChild(video);
+      }
+    }
+    // Default: treat as web content
+    else {
+      const iframe = document.createElement('iframe');
+      iframe.src = contentId;
+      iframe.allow = 'autoplay; encrypted-media';
+      container.appendChild(iframe);
+    }
+  }
+  
+  // Return success response
+  return Promise.resolve(request);
+});
+
+// Handle pause requests
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PAUSE, request => {
+  console.log('Pause request received');
+  // In a real implementation, pause the content
+  return Promise.resolve(request);
+});
+
+// Handle stop requests
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.STOP, request => {
+  console.log('Stop request received');
+  // Clear all content
+  document.getElementById('content-container').innerHTML = '';
+  return Promise.resolve(request);
+});
+
+// Start the receiver
+context.start(options);
+
+// Load HLS.js for HLS stream support
+const script = document.createElement('script');
+script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
+document.head.appendChild(script);
+</script>
 </body>
 </html>
