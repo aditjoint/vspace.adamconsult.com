@@ -1,66 +1,27 @@
-document.addEventListener("DOMContentLoaded", function () {
+// app.js
+document.addEventListener("DOMContentLoaded", () => {
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
+  const pipBtn = document.getElementById("pipBtn");
+  const castBtn = document.getElementById("castBtn");
+  const videos = document.querySelectorAll("main.video-grid video");
 
-  // -----------------------------
-  // 1️⃣ Dynamic Header & Footer
-  // -----------------------------
-  const headerEl = document.getElementById("header-placeholder");
-  const footerEl = document.getElementById("footer-placeholder");
-
-  if (headerEl) {
-    fetch("/header.html")
-      .then(res => res.text())
-      .then(html => { headerEl.innerHTML = html; })
-      .catch(err => console.error("Header load failed:", err));
-  }
-
-  if (footerEl) {
-    fetch("/footer.html")
-      .then(res => res.text())
-      .then(html => { footerEl.innerHTML = html; })
-      .catch(err => console.error("Footer load failed:", err));
-  }
-
-  // -----------------------------
-  // 2️⃣ Video Grid Setup
-  // -----------------------------
-  const videos = document.querySelectorAll('main.video-grid video');
-
-  videos.forEach(video => {
-    // Ensure autoplay, muted, loop
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-
-    // Handle autoplay block
-    video.play().catch(err => console.warn("Video autoplay blocked:", err));
+  // ----- Fullscreen -----
+  fullscreenBtn.addEventListener("click", () => {
+    const elem = document.documentElement;
+    if (!document.fullscreenElement) {
+      elem.requestFullscreen().catch(err => {
+        console.warn(`Error attempting to enable full-screen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
   });
 
-  // -----------------------------
-  // 3️⃣ Fullscreen Button
-  // -----------------------------
-  const fullscreenBtn = document.getElementById("fullscreenBtn");
-  if (fullscreenBtn) {
-    fullscreenBtn.addEventListener("click", () => {
-      const grid = document.querySelector("main.video-grid");
-      if (!grid) return;
-
-      if (!document.fullscreenElement) {
-        grid.requestFullscreen().catch(err => console.error("Fullscreen error:", err));
-      } else {
-        document.exitFullscreen();
-      }
-    });
-  }
-
-  // -----------------------------
-  // 4️⃣ Picture-in-Picture Button
-  // -----------------------------
-  const pipBtn = document.getElementById("pipBtn");
-  if (pipBtn) {
-    pipBtn.addEventListener("click", async () => {
-      const firstVideo = videos[0];
-      if (!firstVideo) return;
-
+  // ----- Picture-in-Picture (PiP) -----
+  pipBtn.addEventListener("click", async () => {
+    // Try PiP with the first video in the grid
+    const firstVideo = videos[0];
+    if (firstVideo) {
       try {
         if (document.pictureInPictureElement) {
           await document.exitPictureInPicture();
@@ -68,17 +29,28 @@ document.addEventListener("DOMContentLoaded", function () {
           await firstVideo.requestPictureInPicture();
         }
       } catch (err) {
-        console.error("PiP error:", err);
+        console.warn("PiP not supported:", err);
       }
+    }
+  });
+
+  // ----- Chrome Cast -----
+  castBtn.addEventListener("click", () => {
+    if (!window.cast || !cast.framework) {
+      alert("Chrome Cast not available or not initialized.");
+      return;
+    }
+    const context = cast.framework.CastContext.getInstance();
+    context.requestSession().then(() => {
+      alert("Connected to Chromecast. Select a video to cast.");
+    }).catch(err => {
+      console.error("Cast error:", err);
     });
-  }
+  });
 
-  // -----------------------------
-  // 5️⃣ Hero Animation / Optional
-  // -----------------------------
-  if (typeof initHeroAnimation === "function") initHeroAnimation();
-
-  // -----------------------------
-  // 6️⃣ Tabs / Dynamic UI (Optional)
-  // -----------------------------
-  if (type
+  // Optional: Auto-play all videos muted
+  videos.forEach(video => {
+    video.muted = true;
+    video.play().catch(err => console.warn("Video play error:", err));
+  });
+});
