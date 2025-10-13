@@ -3,75 +3,74 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VSpace Digital Signage | ADAM Consult</title>
-  <link rel="stylesheet" href="styles.css" />
-  <script defer src="app.js"></script>
-  <script defer src="cast.js"></script>
+  <title>ADAM Signage — Home</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="assets/icon-192.png" />
+  <meta name="theme-color" content="#000000" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 1rem;
+      letter-spacing: 1px;
+    }
+    p { font-size: 1rem; max-width: 600px; opacity: 0.8; }
+    .btn-group { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    a.btn {
+      background: linear-gradient(135deg, #00b09b, #96c93d);
+      color: #fff;
+      text-decoration: none;
+      padding: 0.8rem 1.4rem;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    a.btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+    footer {
+      position: absolute;
+      bottom: 12px;
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+  </style>
 </head>
-
 <body>
-  <!-- Header -->
-  <header class="app-header">
-    <div class="logo-section">
-      <img src="assets/logo.png" alt="VSpace Logo" class="logo">
-      <h1>VSpace Digital Signage</h1>
-    </div>
-    <div class="controls">
-      <button id="fullscreenBtn">⛶ Full Screen</button>
-      <button id="pipBtn">📺 Picture-in-Picture</button>
-      <button id="castBtn">📡 Cast to TV</button>
-    </div>
-  </header>
+  <h1>💡 ADAM Signage</h1>
+  <p>A modern Chromecast-based digital signage platform — deployable on GitHub Pages.  
+  Manage displays, cast playlists, and build smart kiosks.</p>
 
-  <!-- Video Wall -->
-  <main class="video-grid">
-    <video id="mainVideo" autoplay loop muted playsinline>
-      <source src="assets/sample.mp4" type="video/mp4" />
-      Your browser does not support video playback.
-    </video>
-    <video autoplay loop muted playsinline>
-      <source src="assets/sample2.mp4" type="video/mp4" />
-    </video>
-    <video autoplay loop muted playsinline>
-      <source src="assets/sample3.mp4" type="video/mp4" />
-    </video>
-  </main>
+  <div class="btn-group">
+    <a class="btn" href="sender.html">📺 Launch Sender Dashboard</a>
+    <a class="btn" href="receiver.html">🎬 View Receiver Demo</a>
+    <a class="btn" href="playlists.json" target="_blank">📂 View Playlist JSON</a>
+  </div>
 
-  <!-- CTA Section -->
-  <section class="cta-section">
-    <h2>Launch Digital Signage Services</h2>
-    <div class="cta-buttons">
-      <a href="services/display.html" class="btn">Display Wall</a>
-      <a href="services/screen.html" class="btn">Screen Mode</a>
-      <a href="services/wall.html" class="btn">Video Wall</a>
-      <a href="services/kiosk.html" target="_blank" class="btn">Open Kiosk Mode</a>
-    </div>
-  </section>
+  <footer>© 2025 ADAM Signage | Powered by GitHub Pages</footer>
 
-  <!-- Footer -->
-  <footer>
-    <div class="footer-flex">
-      <div class="footer-left">
-        <h3>About VSpace</h3>
-        <p>VSpace is an advanced multi-display kiosk and casting solution for digital signage, built by ADAM Consult.</p>
-      </div>
-      <div class="footer-center">
-        <h3>Quick Links</h3>
-        <ul>
-          <li><a href="services/display.html">Display</a></li>
-          <li><a href="services/screen.html">Screen</a></li>
-          <li><a href="services/wall.html">Wall</a></li>
-          <li><a href="services/kiosk.html">Kiosk</a></li>
-        </ul>
-      </div>
-      <div class="footer-qr">
-        <h3>Scan to Access</h3>
-        <img src="assets/qr.png" alt="QR Code" />
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>© 2025 ADAM Consult | vspace.adamconsult.com</p>
-    </div>
-  </footer>
+  <script>
+    // Register service worker for PWA offline support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => {
+        console.log('Service Worker registered');
+      });
+    }
+  </script>
 </body>
 </html>
