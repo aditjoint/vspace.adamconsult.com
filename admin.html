@@ -135,17 +135,18 @@ function initDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.id}</div>
+        <div>ID: ${device.deviceId || device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
+        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
-        <button onclick="assignContent('${device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
+        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -179,17 +180,18 @@ function filterDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.id}</div>
+        <div>ID: ${device.deviceId || device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
+        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
-        <button onclick="assignContent('${device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
+        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -329,8 +331,146 @@ function syncAll() {
   alert('Syncing all devices...');
 }
 
-// Initialize on load
-window.onload = initDevices;
+// Handle device registration from receivers
+if (typeof BroadcastChannel !== 'undefined') {
+  const channel = new BroadcastChannel('device-registration');
+  channel.onmessage = function(event) {
+    if (event.data.action === 'register') {
+      // Add new device to the list
+      const newDevice = {
+        ...event.data.device,
+        status: 'online'
+      };
+      
+      // Check if device already exists
+      const existingIndex = devices.findIndex(d => d.id === newDevice.deviceId);
+      if (existingIndex >= 0) {
+        // Update existing device
+        devices[existingIndex] = newDevice;
+      } else {
+        // Add new device
+        devices.push(newDevice);
+      }
+      
+      // Refresh the device list
+      initDevices();
+      console.log('Device registered:', newDevice);
+    }
+  };
+}
+
+
+// Add setup link to header
+document.querySelector('.header').insertAdjacentHTML('beforeend', `
+  <div style="margin-left: 20px;">
+    <button onclick="openSetup()" style="background: #6c757d;">Device Setup</button>
+  </div>
+`);
+
+function openSetup() {
+  // Create setup form in a popup
+  const setupForm = `
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000;" id="setupOverlay">
+      <div style="background: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;">
+        <h2 style="color: #007bff; margin-top: 0;">Device Configuration</h2>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold;">Device Name</label>
+          <input type="text" id="setupDeviceName" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" value="${localStorage.getItem('deviceName') || ''}">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold;">State</label>
+          <select id="setupState" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="Maharashtra" ${localStorage.getItem('state') === 'Maharashtra' ? 'selected' : ''}>Maharashtra</option>
+            <option value="Tamil Nadu" ${localStorage.getItem('state') === 'Tamil Nadu' ? 'selected' : ''}>Tamil Nadu</option>
+            <option value="Karnataka" ${localStorage.getItem('state') === 'Karnataka' ? 'selected' : ''}>Karnataka</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold;">Region</label>
+          <select id="setupRegion" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="Mumbai Metro" ${localStorage.getItem('region') === 'Mumbai Metro' ? 'selected' : ''}>Mumbai Metro</option>
+            <option value="Pune" ${localStorage.getItem('region') === 'Pune' ? 'selected' : ''}>Pune</option>
+            <option value="Chennai" ${localStorage.getItem('region') === 'Chennai' ? 'selected' : ''}>Chennai</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold;">Location</label>
+          <select id="setupLocation" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="Corporate Office" ${localStorage.getItem('location') === 'Corporate Office' ? 'selected' : ''}>Corporate Office</option>
+            <option value="Retail Store" ${localStorage.getItem('location') === 'Retail Store' ? 'selected' : ''}>Retail Store</option>
+            <option value="Factory" ${localStorage.getItem('location') === 'Factory' ? 'selected' : ''}>Factory</option>
+          </select>
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: bold;">Language</label>
+          <select id="setupLanguage" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <option value="en" ${localStorage.getItem('language') === 'en' ? 'selected' : ''}>English</option>
+            <option value="hi" ${localStorage.getItem('language') === 'hi' ? 'selected' : ''}>Hindi</option>
+            <option value="mr" ${localStorage.getItem('language') === 'mr' ? 'selected' : ''}>Marathi</option>
+            <option value="ta" ${localStorage.getItem('language') === 'ta' ? 'selected' : ''}>Tamil</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button onclick="saveSetup()" style="flex: 1; background: #007bff; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Save</button>
+          <button onclick="closeSetup()" style="flex: 1; background: #6c757d; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.insertAdjacentHTML('beforeend', setupForm);
+}
+
+function saveSetup() {
+  // Save to localStorage
+  localStorage.setItem('deviceName', document.getElementById('setupDeviceName').value);
+  localStorage.setItem('state', document.getElementById('setupState').value);
+  localStorage.setItem('region', document.getElementById('setupRegion').value);
+  localStorage.setItem('location', document.getElementById('setupLocation').value);
+  localStorage.setItem('language', document.getElementById('setupLanguage').value);
+  
+  alert('Configuration saved! Restart the receiver to apply changes.');
+  closeSetup();
+}
+
+function closeSetup() {
+  const overlay = document.getElementById('setupOverlay');
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+// Add device ID to the device card display
+function initDevices() {
+  const grid = document.getElementById('devicesGrid');
+  grid.innerHTML = '';
+  devices.forEach(device => {
+    const card = document.createElement('div');
+    card.className = 'device-card';
+    card.innerHTML = `
+      <div class="device-header">
+        <strong>${device.name}</strong>
+        <span class="status ${device.status}">${device.status}</span>
+      </div>
+      <div class="device-info">
+        <div>ID: ${device.deviceId || device.id}</div>
+        <div>Model: ${device.model}</div>
+        <div>IP: ${device.ip}</div>
+        <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
+        <div>Language: ${device.language}</div>
+        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
+      </div>
+      <div class="content-assign">
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
+        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
+      </div>
+      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
+    `;
+    grid.appendChild(card);
+  });
+}
 </script>
+
+  
 </body>
 </html>
