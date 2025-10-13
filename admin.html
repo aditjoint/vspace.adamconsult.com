@@ -27,6 +27,14 @@ button:hover { opacity: 0.9; }
 .content-assign { margin-top: 10px; }
 .content-assign input { width: 100%; margin: 5px 0; }
 .cast-wall { background: #28a745; margin-top: 10px; width: 100%; }
+
+/* 9x9 Grid Controls */
+.grid-controls { margin: 15px 0; padding: 15px; background: #333; border-radius: 8px; }
+.grid-controls h3 { margin: 0 0 10px 0; }
+.grid-url { display: flex; gap: 5px; margin-bottom: 5px; }
+.grid-url input { flex: 1; }
+.grid-url button { width: 80px; }
+.grid-actions { display: flex; gap: 10px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -80,6 +88,25 @@ button:hover { opacity: 0.9; }
     </div>
   </div>
 
+  <!-- 9x9 Grid Controls -->
+  <div class="grid-controls">
+    <h3>9x9 Picture-in-Picture Grid</h3>
+    <div id="gridUrls">
+      <div class="grid-url">
+        <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
+        <button onclick="removeUrl(0)">✕</button>
+      </div>
+    </div>
+    <button onclick="addUrlField()">+ Add URL</button>
+    <div class="grid-actions">
+      <button onclick="castToGrid()">Cast to 9x9 Grid</button>
+      <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
+      <select id="fullscreenTile">
+        <option value="0">Fullscreen Tile 1</option>
+      </select>
+    </div>
+  </div>
+
   <div class="devices-grid" id="devicesGrid">
     <!-- Devices will be populated here -->
   </div>
@@ -122,6 +149,9 @@ function initDevices() {
     `;
     grid.appendChild(card);
   });
+  
+  // Initialize grid controls
+  updateFullscreenOptions();
 }
 
 // Filter devices based on selections
@@ -209,6 +239,82 @@ function castToWall() {
   
   // In production, this would use Cast SDK to cast to multiple devices
   alert(`Casting to wall: ${onlineDevices.length} online devices`);
+}
+
+// Add URL field for grid
+function addUrlField() {
+  const container = document.getElementById('gridUrls');
+  const index = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'grid-url';
+  div.innerHTML = `
+    <input type="text" placeholder="Content URL for Tile ${index + 1}">
+    <button onclick="removeUrl(${index})">✕</button>
+  `;
+  container.appendChild(div);
+  updateFullscreenOptions();
+}
+
+// Remove URL field
+function removeUrl(index) {
+  const container = document.getElementById('gridUrls');
+  if (container.children.length > 1) {
+    container.removeChild(container.children[index]);
+    updateFullscreenOptions();
+  }
+}
+
+// Update fullscreen tile options
+function updateFullscreenOptions() {
+  const select = document.getElementById('fullscreenTile');
+  const container = document.getElementById('gridUrls');
+  const count = container.children.length;
+  
+  // Save current selection
+  const current = select.value;
+  
+  // Clear options
+  select.innerHTML = '';
+  
+  // Add new options
+  for (let i = 0; i < count; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `Fullscreen Tile ${i + 1}`;
+    select.appendChild(option);
+  }
+  
+  // Restore selection if possible
+  if (current < count) {
+    select.value = current;
+  }
+}
+
+// Cast to 9x9 grid
+function castToGrid(withFullscreen = false) {
+  const urls = [];
+  const container = document.getElementById('gridUrls');
+  
+  for (let i = 0; i < container.children.length; i++) {
+    const input = container.children[i].querySelector('input');
+    if (input.value.trim()) {
+      urls.push(input.value.trim());
+    }
+  }
+  
+  if (urls.length === 0) {
+    alert('Please add at least one URL');
+    return;
+  }
+  
+  const fullscreenTile = withFullscreen ? parseInt(document.getElementById('fullscreenTile').value) : undefined;
+  
+  // In production, this would use Cast SDK
+  const message = withFullscreen ? 
+    `Casting to 9x9 grid with ${urls.length} sources. Fullscreen on Tile ${fullscreenTile + 1}` :
+    `Casting to 9x9 grid with ${urls.length} sources`;
+  
+  alert(message);
 }
 
 // Refresh devices (simulated)
