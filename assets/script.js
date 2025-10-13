@@ -77,3 +77,18 @@ function makeDraggable(el) {
 }
 
 loadLayout();
+
+let sceneIndex = 0;
+
+async function startSceneRotation() {
+  const res = await fetch('config/layout.json');
+  const data = await res.json();
+  if (!data.playlists) return;
+
+  setInterval(() => {
+    sceneIndex = (sceneIndex + 1) % data.playlists.length;
+    const layout = data.playlists[sceneIndex];
+    renderLayout(layout.tiles);
+  }, data.rotationInterval || 30000);
+}
+
