@@ -3,15 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage</title>
+<title>ADAM Enterprise Signage</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="assets/favicon.ico">
-<script>
-  // Redirect to admin panel
-  window.location.href = 'admin.html';
-</script>
+<meta name="theme-color" content="#0d6efd">
+<style>
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.container {
+  text-align: center;
+  color: white;
+  padding: 2rem;
+}
+h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+.btn {
+  display: inline-block;
+  margin: 1rem;
+  padding: 1rem 2rem;
+  background: white;
+  color: #667eea;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+</style>
 </head>
 <body>
-  <h1>Loading ADAM Enterprise Signage System...</h1>
+<div class="container">
+  <h1>ADAM Enterprise Signage</h1>
+  <p>Choose your interface:</p>
+  <a href="admin.html" class="btn">Admin Panel</a>
+  <a href="sender.html" class="btn">Sender</a>
+  <a href="player.html" class="btn">Player</a>
+</div>
 </body>
 </html>
