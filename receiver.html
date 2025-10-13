@@ -3,120 +3,146 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Enterprise Signage Receiver</title>
+<title>ADAM Enterprise Signage Receiver - 9x9 Grid</title>
 <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 <style>
 body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: black; }
-#content-container { width: 100%; height: 100%; }
-iframe { width: 100%; height: 100%; border: none; }
+.grid-container { 
+  display: grid; 
+  grid-template-columns: repeat(9, 1fr); 
+  grid-template-rows: repeat(9, 1fr); 
+  width: 100%; 
+  height: 100%; 
+  gap: 2px; 
+  padding: 2px; 
+}
+.grid-item { 
+  background: #000; 
+  position: relative; 
+  overflow: hidden; 
+}
+.grid-item video, 
+.grid-item img, 
+.grid-item iframe { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain; 
+}
+.grid-item::after {
+  content: attr(data-index);
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 2px;
+}
+#fullscreen { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  background: black; 
+  z-index: 1000; 
+  display: none; 
+}
+#fullscreen video,
+#fullscreen img,
+#fullscreen iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
 </style>
 </head>
 <body>
-<cast-media-player></cast-media-player>
-<div id="content-container"></div>
+<div class="grid-container" id="grid"></div>
+<div id="fullscreen"></div>
 
 <script>
 // Initialize Cast Receiver Context
 const context = cast.framework.CastReceiverContext.getInstance();
 const playerManager = context.getPlayerManager();
 
-// Set up receiver options
-const options = new cast.framework.CastReceiverOptions();
-options.disableIdleTimeout = true;
+// Create 9x9 grid (81 tiles)
+const grid = document.getElementById('grid');
+const tiles = [];
+const fullscreen = document.getElementById('fullscreen');
 
-// Handle load requests
+// Initialize the 9x9 grid
+for (let i = 0; i < 81; i++) {
+  const tile = document.createElement('div');
+  tile.className = 'grid-item';
+  tile.id = `tile-${i}`;
+  tile.setAttribute('data-index', i + 1);
+  grid.appendChild(tile);
+  tiles.push(tile);
+}
+
+// Handle load requests to populate grid
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
   console.log('Load request received:', request);
   
-  // Clear existing content
-  document.getElementById('content-container').innerHTML = '';
-  
-  // Handle different content types
-  if (request.media && request.media.contentId) {
-    const contentId = request.media.contentId;
-    const container = document.getElementById('content-container');
+  if (request.customData && request.customData.gridMode === 'pip9x9') {
+    // Clear all tiles first
+    tiles.forEach(tile => {
+      tile.innerHTML = '';
+    });
     
-    // Handle YouTube URLs
-    if (contentId.includes('youtube.com') || contentId.includes('youtu.be')) {
-      let videoId = '';
-      if (contentId.includes('v=')) {
-        videoId = contentId.split('v=')[1].split('&')[0];
-      } else if (contentId.includes('youtu.be/')) {
-        videoId = contentId.split('youtu.be/')[1];
-      }
-      
-      if (videoId) {
-        const iframe = document.createElement('iframe');
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0`;
-        iframe.allow = 'autoplay; encrypted-media';
-        container.appendChild(iframe);
-      }
+    // Handle content for 9x9 grid
+    if (request.customData.urls && Array.isArray(request.customData.urls)) {
+      request.customData.urls.forEach((content, index) => {
+        if (index < 81) {
+          loadContent(tiles[index], content);
+        }
+      });
     }
-    // Handle image URLs
-    else if (contentId.match(/\.(jpeg|jpg|gif|png|bmp)$/i)) {
-      const img = document.createElement('img');
-      img.src = contentId;
-      img.style.width = '100%';
-      img.style.height = '100%';
-      img.style.objectFit = 'contain';
-      container.appendChild(img);
-    }
-    // Handle video URLs
-    else if (contentId.match(/\.(mp4|webm|ogg|mov)$/i)) {
-      const video = document.createElement('video');
-      video.src = contentId;
-      video.autoplay = true;
-      video.muted = true;
-      video.loop = true;
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'contain';
-      container.appendChild(video);
-    }
-    // Handle HLS streams
-    else if (contentId.includes('.m3u8')) {
-      if (Hls.isSupported()) {
-        const video = document.createElement('video');
-        video.autoplay = true;
-        video.muted = true;
-        video.loop = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'contain';
-        container.appendChild(video);
+    
+    // Show fullscreen for specific tile if requested
+    if (request.customData.fullscreenTile !== undefined && request.customData.fullscreenTile < 81) {
+      const tile = tiles[request.customData.fullscreenTile];
+      if (tile.children.length > 0) {
+        fullscreen.innerHTML = tile.innerHTML;
+        fullscreen.style.display = 'block';
         
-        const hls = new Hls();
-        hls.loadSource(contentId);
-        hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        const video = document.createElement('video');
-        video.src = contentId;
-        video.autoplay = true;
-        video.muted = true;
-        video.loop = true;
-        video.style.width = '100%';
-        video.style.height = '100%';
-        video.style.objectFit = 'contain';
-        container.appendChild(video);
+        // Add exit fullscreen button
+        const exitBtn = document.createElement('div');
+        exitBtn.innerHTML = '✕';
+        exitBtn.style.position = 'absolute';
+        exitBtn.style.top = '10px';
+        exitBtn.style.right = '10px';
+        exitBtn.style.width = '30px';
+        exitBtn.style.height = '30px';
+        exitBtn.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        exitBtn.style.color = 'white';
+        exitBtn.style.display = 'flex';
+        exitBtn.style.alignItems = 'center';
+        exitBtn.style.justifyContent = 'center';
+        exitBtn.style.borderRadius = '50%';
+        exitBtn.style.cursor = 'pointer';
+        exitBtn.onclick = () => {
+          fullscreen.style.display = 'none';
+          fullscreen.innerHTML = '';
+        };
+        fullscreen.appendChild(exitBtn);
       }
-    }
-    // Default: treat as web content
-    else {
-      const iframe = document.createElement('iframe');
-      iframe.src = contentId;
-      iframe.allow = 'autoplay; encrypted-media';
-      container.appendChild(iframe);
     }
   }
+  // Handle single content (normal mode)
+  else if (request.media && request.media.contentId) {
+    // Clear grid
+    tiles.forEach(tile => {
+      tile.innerHTML = '';
+    });
+    
+    // Show single content in fullscreen
+    fullscreen.style.display = 'block';
+    loadContent(fullscreen, request.media.contentId);
+  }
   
-  // Return success response
-  return Promise.resolve(request);
-});
-
-// Handle pause requests
-playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PAUSE, request => {
-  console.log('Pause request received');
-  // In a real implementation, pause the content
   return Promise.resolve(request);
 });
 
@@ -124,12 +150,120 @@ playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PAUSE, r
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.STOP, request => {
   console.log('Stop request received');
   // Clear all content
-  document.getElementById('content-container').innerHTML = '';
+  tiles.forEach(tile => {
+    tile.innerHTML = '';
+  });
+  fullscreen.style.display = 'none';
+  fullscreen.innerHTML = '';
   return Promise.resolve(request);
 });
 
+// Load content into a container
+function loadContent(container, content) {
+  container.innerHTML = '';
+  
+  // Handle YouTube URLs
+  if (typeof content === 'string' && (content.includes('youtube.com') || content.includes('youtu.be'))) {
+    let videoId = '';
+    if (content.includes('v=')) {
+      videoId = content.split('v=')[1].split('&')[0];
+    } else if (content.includes('youtu.be/')) {
+      videoId = content.split('youtu.be/')[1];
+    }
+    
+    if (videoId) {
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0`;
+      iframe.allow = 'autoplay; encrypted-media';
+      container.appendChild(iframe);
+    }
+  }
+  // Handle image URLs
+  else if (typeof content === 'string' && content.match(/\.(jpeg|jpg|gif|png|bmp)$/i)) {
+    const img = document.createElement('img');
+    img.src = content;
+    container.appendChild(img);
+  }
+  // Handle video URLs
+  else if (typeof content === 'string' && content.match(/\.(mp4|webm|ogg|mov)$/i)) {
+    const video = document.createElement('video');
+    video.src = content;
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    container.appendChild(video);
+  }
+  // Handle HLS streams
+  else if (typeof content === 'string' && content.includes('.m3u8')) {
+    if (Hls.isSupported()) {
+      const video = document.createElement('video');
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      container.appendChild(video);
+      
+      const hls = new Hls();
+      hls.loadSource(content);
+      hls.attachMedia(video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      const video = document.createElement('video');
+      video.src = content;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      container.appendChild(video);
+    }
+  }
+  // Handle object with type and url
+  else if (typeof content === 'object') {
+    if (content.type === 'youtube') {
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${content.url}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0`;
+      iframe.allow = 'autoplay; encrypted-media';
+      container.appendChild(iframe);
+    } else if (content.type === 'image') {
+      const img = document.createElement('img');
+      img.src = content.url;
+      container.appendChild(img);
+    } else if (content.type === 'video') {
+      const video = document.createElement('video');
+      video.src = content.url;
+      video.autoplay = true;
+      video.muted = true;
+      video.loop = true;
+      container.appendChild(video);
+    } else if (content.type === 'hls') {
+      if (Hls.isSupported()) {
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        container.appendChild(video);
+        
+        const hls = new Hls();
+        hls.loadSource(content.url);
+        hls.attachMedia(video);
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        const video = document.createElement('video');
+        video.src = content.url;
+        video.autoplay = true;
+        video.muted = true;
+        video.loop = true;
+        container.appendChild(video);
+      }
+    }
+  }
+  // Default: treat as web content
+  else if (typeof content === 'string') {
+    const iframe = document.createElement('iframe');
+    iframe.src = content;
+    iframe.allow = 'autoplay; encrypted-media';
+    container.appendChild(iframe);
+  }
+}
+
 // Start the receiver
-context.start(options);
+context.start();
 
 // Load HLS.js for HLS stream support
 const script = document.createElement('script');
