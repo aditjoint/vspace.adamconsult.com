@@ -1,26 +1,31 @@
-window.__onGCastApiAvailable = function(isAvailable) {
+window['__onGCastApiAvailable'] = function(isAvailable) {
   if (isAvailable) {
-    const context = cast.framework.CastContext.getInstance();
-    context.setOptions({
-      receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
-    });
+    initializeCastApi();
   }
 };
 
-document.getElementById("castBtn").addEventListener("click", async () => {
-  const videos = document.querySelectorAll("video");
-  const activeVideo = videos[0];
-  const mediaInfo = new chrome.cast.media.MediaInfo(activeVideo.src, "video/mp4");
-  const request = new chrome.cast.media.LoadRequest(mediaInfo);
-  const session = cast.framework.CastContext.getInstance().getCurrentSession();
+function initializeCastApi() {
+  const context = cast.framework.CastContext.getInstance();
+  context.setOptions({
+    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+  });
+}
 
-  if (session) {
-    session.loadMedia(request).then(
-      () => console.log("Cast started successfully"),
-      (error) => console.error("Error casting:", error)
+function castToTV() {
+  const video = document.getElementById("mainVideo");
+  if (!video) return alert("No video found to cast!");
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(video.src, 'video/mp4');
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+  const castSession = cast.framework.CastContext.getInstance().getCurrentSession();
+
+  if (castSession) {
+    castSession.loadMedia(request).then(
+      () => console.log('Cast started'),
+      (errorCode) => console.error('Error casting:', errorCode)
     );
   } else {
-    alert("Please connect to a Chromecast device first.");
+    alert("No cast session available.");
   }
-});
+}
