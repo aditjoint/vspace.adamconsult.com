@@ -45,35 +45,39 @@
 </head>
 <body>
   <!-- 9x9 grid -->
-  <script>
-    for (let i = 0; i < 81; i++) {
-      document.write(`
-        <div class="screen" id="screen${i}">
-          <button class="control-btn" onclick="toggleFull(${i})">⛶</button>
-          <iframe src="" frameborder="0" allowfullscreen></iframe>
-        </div>
-      `);
+ <script>
+  for (let i = 0; i < 81; i++) {
+    document.write(`
+      <div class="screen" id="screen${i}">
+        <iframe src="" frameborder="0" allowfullscreen></iframe>
+      </div>
+    `);
+  }
+
+  const iframes = document.querySelectorAll('iframe');
+
+  // 🔹 BroadcastChannel Receiver
+  const channel = new BroadcastChannel('signage-control');
+  channel.onmessage = (event) => {
+    const { action, index, url } = event.data;
+
+    switch(action) {
+      case 'play':
+        iframes[index].src = url;
+        break;
+      case 'fullscreen':
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('fullscreen'));
+        document.getElementById(`screen${index}`).classList.add('fullscreen');
+        break;
+      case 'broadcast':
+        iframes.forEach(f => f.src = url);
+        break;
+      case 'clear':
+        iframes.forEach(f => f.src = "");
+        break;
     }
+  };
+</script>
 
-    // sample URLs for demo
-    const sampleStreams = [
-      "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1",
-      "https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=1",
-      "https://www.youtube.com/embed/21X5lGlDOfg?autoplay=1&mute=1"
-    ];
-
-    // assign videos randomly
-    const iframes = document.querySelectorAll('iframe');
-    iframes.forEach((iframe, i) => {
-      iframe.src = sampleStreams[i % sampleStreams.length];
-    });
-
-    // fullscreen toggle
-    function toggleFull(i) {
-      const target = document.getElementById(`screen${i}`);
-      document.querySelectorAll('.screen').forEach(el => el.classList.remove('fullscreen'));
-      target.classList.toggle('fullscreen');
-    }
-  </script>
 </body>
 </html>
