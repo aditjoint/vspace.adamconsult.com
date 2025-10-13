@@ -4,20 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ADAM Signage — Home</title>
+
+  <!-- 🧭 PWA meta -->
+  <meta name="theme-color" content="#000000" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" type="image/png" href="assets/icon-192.png" />
-  <!-- Add to <head> -->
+
+  <!-- 📡 Chromecast SDK -->
   <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+  <!-- 🎞️ HLS + Core scripts -->
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="assets/script.js"></script>
-  <script src="cast-sender.js"></script>
-    <script>
-    // Detect if running as PWA (standalone kiosk mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      window.location.href = 'sender.html';
-    }
-  </script>
-  <meta name="theme-color" content="#000000" />
+  <script src="assets/script.js" defer></script>
+  <script src="cast-sender.js" defer></script>
+
   <style>
     * { box-sizing: border-box; }
     body {
@@ -62,6 +62,7 @@
     }
   </style>
 </head>
+
 <body>
   <h1>💡 ADAM Signage</h1>
   <p>A modern Chromecast-based digital signage platform — deployable on GitHub Pages.  
@@ -70,23 +71,23 @@
   <div class="btn-group">
     <a class="btn" href="sender.html">📺 Launch Sender Dashboard</a>
     <a class="btn" href="receiver.html">🎬 View Receiver Demo</a>
-    <a class="btn" href="playlists.json" target="_blank">📂 View Playlist JSON</a>
+    <a class="btn" href="config/layout.json" target="_blank">📂 View Playlist JSON</a>
   </div>
 
   <footer>© 2025 ADAM Signage | Powered by GitHub Pages</footer>
 
   <script>
-    // Register service worker for PWA offline support
+    // 🧠 Register Service Worker for offline support
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker registered');
-      });
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('✅ Service Worker registered'))
+        .catch(err => console.error('SW registration failed:', err));
     }
-    // add to bottom script:
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  window.location.href = 'sender.html';
-}
 
+    // 🚀 Redirect if running as PWA standalone (kiosk mode)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      window.location.href = 'sender.html';
+    }
   </script>
 </body>
 </html>
