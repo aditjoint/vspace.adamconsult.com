@@ -3,121 +3,244 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage Control Panel</title>
+<title>ADAM Signage - Sender</title>
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <style>
-body { font-family: system-ui, sans-serif; background:#0d1117; color:#fff; margin:0; padding:20px; }
-h1 { font-size:1.5rem; margin-bottom:10px; }
-.grid { display:grid; grid-template-columns:repeat(9,1fr); gap:5px; }
-.tile { background:#222; padding:10px; text-align:center; border-radius:8px; cursor:pointer; transition:0.2s; }
-.tile:hover { background:#333; transform:scale(1.05); }
-input, button { padding:6px 10px; margin:5px 0; border:none; border-radius:4px; }
-input[type="text"] { width:80%; }
-button { cursor:pointer; background:#007bff; color:white; }
-button:hover { background:#0056b3; }
-.control-bar { margin-bottom:20px; display:flex; flex-wrap:wrap; gap:10px; }
-select { padding:6px 10px; border-radius:4px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a1a;
+  color: #f8f9fa;
+  margin: 0;
+  padding: 2rem;
+}
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+h1 {
+  color: #0d6efd;
+  margin-bottom: 2rem;
+}
+.section {
+  background: #2d2d2d;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #404040;
+}
+.section h2 {
+  margin-top: 0;
+  color: #6f42c1;
+}
+input[type="text"], select {
+  width: 100%;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid #404040;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+}
+button {
+  padding: 0.75rem 1.5rem;
+  background: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5rem 0.5rem 0.5rem 0;
+  transition: all 0.2s ease;
+}
+button:hover {
+  background: #0b5ed7;
+  transform: translateY(-1px);
+}
+.cast-btn {
+  background: #198754;
+}
+.cast-btn:hover {
+  background: #157347;
+}
+#castStatus {
+  padding: 1rem;
+  background: rgba(13,110,253,0.1);
+  border-left: 4px solid #0d6efd;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
 </style>
 </head>
 <body>
-<h1>ADAM Digital Signage Control Panel</h1>
+<div class="container">
+  <h1>ADAM Signage - Cast Sender</h1>
+  
+  <div id="castStatus">
+    Status: <span id="status">Not connected</span>
+  </div>
 
-<div class="control-bar">
-  <input id="globalUrl" type="text" placeholder="YouTube, image, or HLS URL">
-  <select id="zoneSelect">
-    <option value="all">All Zones</option>
-    <option value="Lobby">Lobby</option>
-    <option value="Shop">Shop Floor</option>
-    <option value="Conference">Conference</option>
-  </select>
-  <select id="langSelect">
-    <option value="all">All Languages</option>
-    <option value="en">English</option>
-    <option value="hi">Hindi</option>
-  </select>
-  <button onclick="broadcastAll()">Broadcast</button>
-  <button onclick="clearAll()">Clear</button>
-  <button onclick="castWall()">Cast Wall</button>
+  <div class="section">
+    <h2>Cast Single Content</h2>
+    <input type="text" id="singleUrl" placeholder="Enter URL (YouTube, image, video)">
+    <button class="cast-btn" onclick="castSingle()">Cast Single Content</button>
+  </div>
+
+  <div class="section">
+    <h2>Cast to 9x9 Grid</h2>
+    <div id="gridInputs"></div>
+    <button onclick="addGridInput()">Add URL</button>
+    <button class="cast-btn" onclick="castGrid()">Cast to 9x9 Grid</button>
+  </div>
+
+  <div class="section">
+    <h2>Cast Controls</h2>
+    <button onclick="initializeCast()">Initialize Cast</button>
+    <button onclick="stopCasting()">Stop Casting</button>
+  </div>
 </div>
 
-<div class="grid" id="grid"></div>
-
-<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <script>
-const channel = new BroadcastChannel('signage-control');
-const tilesData = [];
-const grid = document.getElementById('grid');
+let castSession = null;
 
-// Build 9x9 grid (81 tiles)
-for (let i = 0; i < 81; i++) {
-  const tile = document.createElement('div');
-  tile.className = 'tile';
-  const zone = i < 27 ? 'Lobby' : (i < 54 ? 'Shop' : 'Conference');
-  const language = i % 2 === 0 ? 'en' : 'hi';
-  tilesData.push({ zone, language });
+// Initialize Cast Framework
+window['__onGCastApiAvailable'] = function(isAvailable) {
+  if (isAvailable) {
+    initializeCastApi();
+  }
+};
 
-  tile.innerHTML = `
-    <div>Screen ${i+1} [${zone}/${language}]</div>
-    <input id="url${i}" type="text" placeholder="URL or YouTube">
-    <button onclick="sendTo(${i})">Send</button>
-    <button onclick="goFull(${i})">Full</button>
+function initializeCastApi() {
+  const context = cast.framework.CastContext.getInstance();
+  context.setOptions({
+    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+  });
+
+  context.addEventListener(
+    cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+    (event) => {
+      switch (event.sessionState) {
+        case cast.framework.SessionState.SESSION_STARTED:
+          castSession = event.session;
+          document.getElementById('status').textContent = 'Connected';
+          console.log('Cast session started');
+          break;
+        case cast.framework.SessionState.SESSION_ENDED:
+          castSession = null;
+          document.getElementById('status').textContent = 'Not connected';
+          console.log('Cast session ended');
+          break;
+      }
+    }
+  );
+}
+
+function initializeCast() {
+  const context = cast.framework.CastContext.getInstance();
+  context.requestSession().then(
+    () => {
+      console.log('Cast session request successful');
+    },
+    (error) => {
+      console.error('Error requesting cast session:', error);
+    }
+  );
+}
+
+function castSingle() {
+  const url = document.getElementById('singleUrl').value.trim();
+  if (!url) {
+    alert('Please enter a URL');
+    return;
+  }
+
+  if (!castSession) {
+    alert('No cast session. Please initialize cast first.');
+    return;
+  }
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(url, 'video/mp4');
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+
+  castSession.loadMedia(request).then(
+    () => {
+      console.log('Media loaded successfully');
+      alert('Content cast successfully!');
+    },
+    (error) => {
+      console.error('Error loading media:', error);
+      alert('Error casting content');
+    }
+  );
+}
+
+function castGrid() {
+  const inputs = document.querySelectorAll('#gridInputs input');
+  const urls = [];
+  
+  inputs.forEach(input => {
+    if (input.value.trim()) {
+      urls.push(input.value.trim());
+    }
+  });
+
+  if (urls.length === 0) {
+    alert('Please add at least one URL');
+    return;
+  }
+
+  if (!castSession) {
+    alert('No cast session. Please initialize cast first.');
+    return;
+  }
+
+  const customData = {
+    gridMode: 'pip9x9',
+    urls: urls
+  };
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(
+    'https://yourdomain.com/receiver.html',
+    'text/html'
+  );
+  
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+  request.customData = customData;
+
+  castSession.loadMedia(request).then(
+    () => {
+      console.log('Grid loaded successfully');
+      alert(`Grid cast successfully with ${urls.length} sources!`);
+    },
+    (error) => {
+      console.error('Error loading grid:', error);
+      alert('Error casting grid');
+    }
+  );
+}
+
+function stopCasting() {
+  if (castSession) {
+    castSession.endSession(true);
+  }
+}
+
+function addGridInput() {
+  const container = document.getElementById('gridInputs');
+  const index = container.children.length;
+  const div = document.createElement('div');
+  div.style.marginBottom = '0.5rem';
+  div.innerHTML = `
+    <input type="text" placeholder="URL for Tile ${index + 1}">
   `;
-  grid.appendChild(tile);
+  container.appendChild(div);
 }
 
-function normalizeYouTubeUrl(url) {
-  if (!url) return '';
-  if (url.includes("youtube.com/watch?v=")) {
-    const id = url.split("v=")[1].split("&")[0];
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
-  } else if (url.includes("youtu.be/")) {
-    const id = url.split("youtu.be/")[1];
-    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1`;
-  }
-  return url;
-}
-
-function sendTo(index) {
-  const url = normalizeYouTubeUrl(document.getElementById(`url${index}`).value.trim());
-  if (!url) return;
-  const { zone, language } = tilesData[index];
-  const selZone = document.getElementById('zoneSelect').value;
-  const selLang = document.getElementById('langSelect').value;
-  if ((selZone === 'all' || selZone === zone) && (selLang === 'all' || selLang === language)) {
-    channel.postMessage({ action:'play', index, url, zone, language });
-  }
-}
-
-function goFull(index) {
-  channel.postMessage({ action:'fullscreen', index });
-}
-
-function broadcastAll() {
-  const url = normalizeYouTubeUrl(document.getElementById('globalUrl').value.trim());
-  if (!url) return;
-  const selZone = document.getElementById('zoneSelect').value;
-  const selLang = document.getElementById('langSelect').value;
-  channel.postMessage({ action:'broadcast', url, zone: selZone, language: selLang });
-}
-
-function clearAll() {
-  channel.postMessage({ action:'clear' });
-}
-
-// ---------------- Chromecast ----------------
-function castWall() {
-  const appID = 'CC1AD845'; // Default Receiver
-  const sessionRequest = new chrome.cast.SessionRequest(appID);
-  const apiConfig = new chrome.cast.ApiConfig(sessionRequest, null, null);
-  chrome.cast.initialize(apiConfig, ()=>console.log('Cast init'), e=>console.error(e));
-  chrome.cast.requestSession(session => {
-    console.log('Cast session started', session);
-    const mediaInfo = new chrome.cast.media.MediaInfo(
-      'https://YOUR_GITHUB_PAGES/receiver.html',
-      'text/html'
-    );
-    const request = new chrome.cast.media.LoadRequest(mediaInfo);
-    session.loadMedia(request, ()=>console.log('Receiver loaded'), e=>console.error(e));
-  }, e=>console.error(e));
+// Initialize with 3 inputs
+for (let i = 0; i < 3; i++) {
+  addGridInput();
 }
 </script>
 </body>
