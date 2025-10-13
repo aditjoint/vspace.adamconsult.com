@@ -8,7 +8,15 @@
   <link rel="icon" type="image/png" href="assets/icon-192.png" />
   <!-- Add to <head> -->
   <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="assets/script.js"></script>
+  <script src="cast-sender.js"></script>
+    <script>
+    // Detect if running as PWA (standalone kiosk mode)
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      window.location.href = 'sender.html';
+    }
+  </script>
   <meta name="theme-color" content="#000000" />
   <style>
     * { box-sizing: border-box; }
