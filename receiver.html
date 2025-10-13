@@ -270,5 +270,61 @@ const script = document.createElement('script');
 script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
 document.head.appendChild(script);
 </script>
+
+<script>
+// Device registration and IP detection
+async function registerDevice() {
+  try {
+    // Get device information from localStorage
+    const deviceInfo = {
+      deviceId: localStorage.getItem('deviceId') || 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+      name: localStorage.getItem('deviceName') || 'Unnamed Display',
+      state: localStorage.getItem('state') || 'Maharashtra',
+      region: localStorage.getItem('region') || 'Mumbai Metro',
+      location: localStorage.getItem('location') || 'Corporate Office',
+      language: localStorage.getItem('language') || 'en',
+      ip: await getPublicIP(),
+      model: 'Chromecast',
+      registeredAt: new Date().toISOString()
+    };
+    
+    // Save deviceId to localStorage if not exists
+    if (!localStorage.getItem('deviceId')) {
+      localStorage.setItem('deviceId', deviceInfo.deviceId);
+    }
+    
+    // Send to admin panel via BroadcastChannel (for demo)
+    try {
+      const channel = new BroadcastChannel('device-registration');
+      channel.postMessage({
+        action: 'register',
+        device: deviceInfo
+      });
+      console.log('Device registration sent to admin panel');
+    } catch (e) {
+      console.log('BroadcastChannel not available, using console');
+      console.log('Device Info:', deviceInfo);
+    }
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+  }
+}
+
+async function getPublicIP() {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    return 'Detection Failed';
+  }
+}
+
+// Register device on load
+window.addEventListener('load', registerDevice);
+</script>
+
+  
 </body>
 </html>
