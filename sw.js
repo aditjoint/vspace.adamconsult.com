@@ -1,10 +1,19 @@
 const CACHE_NAME = 'adam-signage-v1';
-const urlsToCache = ['index.html','sender.html','player.html','receiver.html','manifest.json','playlists.json'];
+const urlsToCache = [
+  'index.html',
+  'admin.html',
+  'receiver.html',
+  'manifest.json'
+];
 
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(urlsToCache)));
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
 });
 
-self.addEventListener('fetch', e=>{
-  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
-});
+self.addEventListener('fetch', event => {
+  event.respondWith
