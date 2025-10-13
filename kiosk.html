@@ -1,125 +1,30 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Multi-Stream Kiosk Demo</title>
-  <style>
-    body { margin:0; font-family: sans-serif; background:#111; color:#fff; }
-    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; padding:12px; }
-    .tile { position:relative; background:#000; overflow:hidden; border-radius:8px; }
-    video { width:100%; height:240px; object-fit:cover; display:block; background:#000; }
-    .controls { position:absolute; bottom:8px; left:8px; display:flex; gap:6px; }
-    .btn { background:rgba(0,0,0,0.5); padding:6px 8px; border-radius:4px; cursor:pointer; font-size:13px; }
-    /* simulated PiP overlay */
-    .pip { position:fixed; right:12px; bottom:12px; width:320px; height:180px; background:#000; border:2px solid #333; z-index:9999; cursor:move; border-radius:6px; overflow:hidden; }
-    .pip video { width:100%; height:100%; object-fit:cover; }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VSPACE Kiosk Display</title>
+  <link rel="stylesheet" href="styles/style.css" />
 </head>
 <body>
-  <h2 style="padding:12px 12px 0 12px;">Kiosk Multi-Stream Demo (simulate PiP)</h2>
-
-  <div class="grid">
-    <div class="tile" data-id="v1">
-      <video id="v1" controls playsinline muted>
-        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
-      </video>
-      <div class="controls">
-        <div class="btn" onclick="makeNativePiP('v1')">Native PiP</div>
-        <div class="btn" onclick="toPipOverlay('v1')">Overlay PiP</div>
-        <div class="btn" onclick="startCast('v1')">Cast</div>
-      </div>
+  <header class="header">
+    <h2>VSPACE Kiosk Mode</h2>
+    <div class="controls">
+      <button onclick="enterFullscreen()">Fullscreen</button>
+      <button onclick="enablePiP()">PiP Mode</button>
+      <button onclick="castToTV()">Cast to TV</button>
     </div>
+  </header>
 
-    <div class="tile" data-id="v2">
-      <video id="v2" controls playsinline muted>
-        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm" type="video/webm">
-      </video>
-      <div class="controls">
-        <div class="btn" onclick="makeNativePiP('v2')">Native PiP</div>
-        <div class="btn" onclick="toPipOverlay('v2')">Overlay PiP</div>
-        <div class="btn" onclick="startCast('v2')">Cast</div>
-      </div>
-    </div>
-
-    <div class="tile" data-id="v3">
-      <video id="v3" controls playsinline muted>
-        <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
-      </video>
-      <div class="controls">
-        <div class="btn" onclick="makeNativePiP('v3')">Native PiP</div>
-        <div class="btn" onclick="toPipOverlay('v3')">Overlay PiP</div>
-        <div class="btn" onclick="startCast('v3')">Cast</div>
-      </div>
-    </div>
+  <div class="grid grid-2x2">
+    <video id="mainVideo" src="assets/video1.mp4" autoplay muted loop></video>
+    <video src="assets/video2.mp4" autoplay muted loop></video>
+    <video src="assets/video3.mp4" autoplay muted loop></video>
+    <video src="assets/video4.mp4" autoplay muted loop></video>
   </div>
 
-  <!-- simulated PiP overlay -->
-  <div id="pipOverlay" class="pip" style="display:none;">
-    <video id="pipVideo" playsinline muted></video>
-  </div>
-
-  <script>
-    // Native PiP (note: many browsers only allow one PiP at a time)
-    async function makeNativePiP(id) {
-      const vid = document.getElementById(id);
-      if (!document.pictureInPictureEnabled) {
-        alert('Picture-in-Picture not supported in this browser.');
-        return;
-      }
-      try {
-        await vid.requestPictureInPicture();
-      } catch (e) {
-        console.error('PiP error:', e);
-      }
-    }
-
-    // move video to simulated overlay (in-page)
-    function toPipOverlay(id) {
-      const v = document.getElementById(id);
-      const overlay = document.getElementById('pipOverlay');
-      const pipVideo = document.getElementById('pipVideo');
-
-      // pause native controls on origin
-      // attach srcObject or src to overlay
-      pipVideo.src = v.currentSrc || v.querySelector('source').src;
-      pipVideo.currentTime = v.currentTime || 0;
-      pipVideo.muted = v.muted;
-      pipVideo.autoplay = true;
-      pipVideo.play();
-
-      overlay.style.display = 'block';
-
-      // simple drag
-      makeDraggable(overlay);
-    }
-
-    function startCast(id) {
-      // placeholder — initialize Google Cast SDK and request session
-      alert('Cast action requested for '+id + '. You need to add Google Cast SDK sender code and app id.');
-    }
-
-    // simple draggable helper
-    function makeDraggable(el) {
-      el.onmousedown = function(e) {
-        const rect = el.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
-        function move(ev) {
-          el.style.left = (ev.clientX - offsetX) + 'px';
-          el.style.top = (ev.clientY - offsetY) + 'px';
-          el.style.right = 'auto';
-          el.style.bottom = 'auto';
-        }
-        function up() {
-          window.removeEventListener('mousemove', move);
-          window.removeEventListener('mouseup', up);
-        }
-        window.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', up);
-      };
-    }
-
-    // Note: for real casting you must load the Google Cast SDK and implement sender flow (see docs).
-  </script>
+  <script src="scripts/app.js"></script>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+  <script src="scripts/cast.js"></script>
 </body>
 </html>
