@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Signage — Sender</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<!-- Google Cast SDK (the below needs HTTPS and valid origin for full behaviour) -->
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+<style>
+body{font-family:system-ui,Segoe UI,Roboto,Arial;background:#111;color:#eee;padding:16px}
+#playlistList {display:flex;gap:12px;flex-wrap:wrap}
+.card{background:#222;padding:12px;border-radius:8px;width:260px}
+video, img{width:100%;border-radius:6px;background:#000}
+#controls{margin-top:12px}
+button{padding:8px 12px;margin-right:6px}
+</style>
+</head>
+<body>
+<h2>Digital Signage — Sender</h2>
+<div id="playlistList">Loading playlists…</div>
+
+<div id="previewArea">
+  <h3>Preview</h3>
+  <video id="preview" controls playsinline></video>
+</div>
+
+<div id="controls">
+  <button id="castBtn">Cast Selected</button>
+  <button id="startLocal">Start Local</button>
+  <button id="stopLocal">Stop</button>
+</div>
+
+<script>
+const PLAYLIST_URL = './playlists.json';
+let playlists = {};
+let currentPlaylistId = null;
+let player = document.getElementById('preview');
+
+async function loadPlaylists(){
+  const res = await fetch(PLAYLIST_URL);
+  playlists = await res.json();
+  renderPlaylists();
+}
+function renderPlaylists(){
+  const root = document.getElementById('playlistList');
+  root.innerHTML = '';
+  Object.entries(playlists).forEach(([id, p])=>{
+    const c = document.createElement('div'); c.className='card';
+    c.innerHTML = `<h4>${p.name}</h4><p>${p.items.length} items</p><button data-id="${id}" class="selectBtn">Select</button>`;
+    root.appendChild(c);
+  });
+  document.querySelectorAll('.selectBtn').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      const id = e.target.dataset.id;
+      currentPlaylistId = id;
+      previewPlaylist(playlists[id]);
+    });
+  });
+}
+
+function previewPlaylist(pl){
+  // for simplicity play first item in preview
+  const item = pl.items[0];
+  if(!item) return;
+  if(item.type === 'hls' && Hls.isSupported()){
+    const hls = new Hls();
+    hls.loadSource(item.src);
+    hls.attachMedia(player);
+    player.play().catch(()=>{});
+  } else {
+    player.src = item.src;
+    player.play().catch(()=>{});
+  }
+}
+
+// Local start loop (simple)
+let localInterval = null;
+function startLocal(){
+  if(!currentPlaylistId) return alert('Select a playlist first');
+  const items = playlists[currentPlaylistId].items;
+  let idx = 0;
+  function playNext(){
+    const it = items[idx];
+    if(!it) { idx = 0; return playNext(); }
+    if(it.type === 'hls' && Hls.isSupported()){
+      const hls = new Hls();
+      hls.loadSource(it.src); hls.attachMedia(player);
+    } else {
+      player.src = it.src;
+    }
+    player.play().catch(()=>{});
+    idx = (idx + 1) % items.length;
+    clearTimeout(localInterval);
+    localInterval = setTimeout(playNext, (it.duration||10)*1000 + 500);
+  }
+  playNext();
+}
+function stopLocal(){ clearTimeout(localInterval); player.pause(); player.src=''; }
+
+document.getElementById('startLocal').onclick = startLocal;
+document.getElementById('stopLocal').onclick = stopLocal;
+
+// CAST: basic flow — requires Google Cast registration to fully function
+document.getElementById('castBtn').addEventListener('click', async ()=>{
+  if(!currentPlaylistId) return alert('Select a playlist first');
+  const pl = playlists[currentPlaylistId];
+
+  // Create a Cast context and request a session (this is simplified)
+  const context = cast.framework.CastContext.getInstance();
+  context.setOptions({ receiverApplicationId: 'YOUR_CUSTOM_RECEIVER_APP_ID', autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED });
+  context.requestSession().then(() => {
+    const session = context.getCurrentSession();
+    // We send the playlist URL to the receiver to fetch and run
+    const message = { type:'LOAD_PLAYLIST', playlistUrl: location.origin + '/playlists.json', playlistId: currentPlaylistId };
+    session.sendMessage('urn:x-cast:com.yourcompany.signage', message, ()=>{}, (err)=>{ console.error(err) });
+  }).catch(e=>{ console.error('Cast failed', e); alert('Cast failed: '+e.message) });
+});
+
+// init
+loadPlaylists();
+</script>
+</body>
+</html>
