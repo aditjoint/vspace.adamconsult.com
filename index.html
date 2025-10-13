@@ -1,93 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ADAM Signage — Home</title>
-
-  <!-- 🧭 PWA meta -->
-  <meta name="theme-color" content="#000000" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" type="image/png" href="assets/icon-192.png" />
-
-  <!-- 📡 Chromecast SDK -->
-  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
-
-  <!-- 🎞️ HLS + Core scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script src="assets/script.js" defer></script>
-  <script src="cast-sender.js" defer></script>
-
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      background: radial-gradient(circle at top, #0f2027, #203a43, #2c5364);
-      color: #fff;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-    }
-    h1 {
-      font-size: 2.2rem;
-      margin-bottom: 1rem;
-      letter-spacing: 1px;
-    }
-    p { font-size: 1rem; max-width: 600px; opacity: 0.8; }
-    .btn-group { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-    a.btn {
-      background: linear-gradient(135deg, #00b09b, #96c93d);
-      color: #fff;
-      text-decoration: none;
-      padding: 0.8rem 1.4rem;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
-    a.btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-    }
-    footer {
-      position: absolute;
-      bottom: 12px;
-      font-size: 0.9rem;
-      opacity: 0.6;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADAM Enterprise Signage</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/icon-192.png">
+<script>
+  // Redirect to admin panel
+  window.location.href = 'admin.html';
+</script>
 </head>
-
 <body>
-  <h1>💡 ADAM Signage</h1>
-  <p>A modern Chromecast-based digital signage platform — deployable.
-  Manage displays, cast playlists, and build smart kiosks.</p>
-
-  <div class="btn-group">
-    <a class="btn" href="sender.html">📺 Launch Sender Dashboard</a>
-    <a class="btn" href="receiver.html">🎬 View Receiver Demo</a>
-    <a class="btn" href="config/layout.json" target="_blank">📂 View Playlist JSON</a>
-  </div>
-
-  <footer>© 2025 ADAM Signage | Powered by GitHub Pages</footer>
-
-  <script>
-    // 🧠 Register Service Worker for offline support
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(() => console.log('✅ Service Worker registered'))
-        .catch(err => console.error('SW registration failed:', err));
-    }
-
-    // 🚀 Redirect if running as PWA standalone (kiosk mode)
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      window.location.href = 'sender.html';
-    }
-  </script>
+  <h1>Loading ADAM Enterprise Signage System...</h1>
 </body>
 </html>
