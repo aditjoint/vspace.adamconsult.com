@@ -87,63 +87,7 @@ playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, re
   console.log('Load request received:', request);
   
   if (request.customData && request.customData.gridMode === 'pip9x9') {
-    // Clear all tiles first<!DOCTYPE html>
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${content.url}?autoplay=1&mute=1&controls=0&disablekb=1&modestbranding=1&rel=0&showinfo=0`;
-      iframe.allow = 'autoplay; encrypted-media';
-      container.appendChild(iframe);
-    } else if (content.type === 'image') {
-      const img = document.createElement('img');
-      img.src = content.url;
-      container.appendChild(img);
-    } else if (content.type === 'video') {
-      const video = document.createElement('video');
-      video.src = content.url;
-      video.autoplay = true;
-      video.muted = true;
-      video.loop = true;
-      container.appendChild(video);
-    } else if (content.type === 'hls') {
-      if (Hls.isSupported()) {
-        const video = document.createElement('video');
-        video.autoplay = true;
-        video.muted = true;
-        video.loop = true;
-        container.appendChild(video);
-        
-        const hls = new Hls();
-        hls.loadSource(content.url);
-        hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        const video = document.createElement('video');
-        video.src = content.url;
-        video.autoplay = true;
-        video.muted = true;
-        video.loop = true;
-        container.appendChild(video);
-      }
-    }
-  }
-  // Default: treat as web content
-  else if (typeof content === 'string') {
-    const iframe = document.createElement('iframe');
-    iframe.src = content;
-    iframe.allow = 'autoplay; encrypted-media';
-    container.appendChild(iframe);
-  }
-}
-
-// Start the receiver
-context.start();
-
-// Load HLS.js for HLS stream support
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/hls.js@latest';
-document.head.appendChild(script);
-</script>
-</body>
-</html>
-
+    // Clear all tiles first
     tiles.forEach(tile => {
       tile.innerHTML = '';
     });
