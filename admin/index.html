@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Digital Signage Admin</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: white; padding: 20px; }
+    textarea { width: 100%; height: 70vh; }
+    button { padding: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Signage Layout Editor</h1>
+  <textarea id="json"></textarea><br/>
+  <button onclick="save()">Save</button>
+
+  <script>
+    const STORAGE_KEY = 'signageLayout';
+    fetch('../config/layout.json')
+      .then(r => r.text())
+      .then(t => document.getElementById('json').value = t);
+
+    function save() {
+      const val = document.getElementById('json').value;
+      localStorage.setItem(STORAGE_KEY, val);
+      alert('Saved locally. Commit to GitHub manually.');
+    }
+  </script>
+</body>
+</html>
