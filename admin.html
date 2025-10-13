@@ -5,172 +5,384 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADAM Enterprise Signage - Admin Panel</title>
 <style>
-:root { --primary: #007bff; --dark: #222; --light: #f8f9fa; --accent: #6f42c1; }
-body { font-family: system-ui, sans-serif; background: var(--dark); color: var(--light); margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
-.container { max-width: 1400px; margin: 0 auto; flex: 1; }
+:root { 
+  --primary: #0d6efd; 
+  --secondary: #6f42c1; 
+  --success: #198754; 
+  --danger: #dc3545; 
+  --dark: #212529; 
+  --light: #f8f9fa; 
+  --gray: #6c757d;
+  --background: #1a1a1a;
+  --card-bg: #2d2d2d;
+  --border: #404040;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); 
+  color: var(--light); 
+  margin: 0; 
+  padding: 0; 
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.container { 
+  max-width: 1600px; 
+  margin: 0 auto; 
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
 
 /* Header Styles */
 .header { 
   display: flex; 
   justify-content: space-between; 
   align-items: center; 
-  padding: 15px 20px; 
-  background: linear-gradient(135deg, var(--primary), var(--accent)); 
-  box-shadow: 0 2px 10px rgba(0,0,0,0.3); 
+  padding: 1rem 2rem; 
+  background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  height: 48px;
+  width: 48px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
 .header h1 { 
   font-size: 1.8rem; 
   color: white; 
   margin: 0; 
+  font-weight: 600;
+}
+
+.controls { 
   display: flex; 
-  align-items: center; 
-  gap: 10px; 
+  gap: 0.75rem; 
+  flex-wrap: wrap; 
 }
-.header h1 img { 
-  height: 40px; 
-  border-radius: 8px; 
-}
-.controls { display: flex; gap: 10px; flex-wrap: wrap; }
-button { 
-  padding: 8px 12px; 
+
+.btn { 
+  padding: 0.6rem 1.25rem; 
   border: none; 
-  border-radius: 4px; 
-  background: rgba(255,255,255,0.2); 
-  color: white; 
+  border-radius: 8px; 
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer; 
-  backdrop-filter: blur(5px); 
-  transition: all 0.2s; 
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
-button:hover { 
-  background: rgba(255,255,255,0.3); 
-  transform: translateY(-1px); 
+
+.btn-primary {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #157347;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5e37a6;
 }
 
 /* Main Content */
-.main-content { padding: 20px; }
+.main-content { 
+  padding: 2rem; 
+  flex: 1;
+}
 
 /* Filters */
 .filters { 
   display: flex; 
-  gap: 15px; 
-  margin: 15px 0; 
+  gap: 1.5rem; 
+  margin: 1.5rem 0; 
   flex-wrap: wrap; 
   background: rgba(255,255,255,0.05); 
-  padding: 15px; 
-  border-radius: 8px; 
-  backdrop-filter: blur(5px); 
+  padding: 1.5rem; 
+  border-radius: 12px; 
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
 }
-.control-group { 
+
+.filter-group { 
   display: flex; 
-  gap: 5px; 
-  align-items: center; 
-  background: rgba(255,255,255,0.1); 
-  padding: 5px 10px; 
-  border-radius: 4px; 
+  flex-direction: column;
+  gap: 0.5rem; 
 }
-label { 
-  font-weight: bold; 
+
+.filter-group label { 
+  font-weight: 600; 
   color: rgba(255,255,255,0.9); 
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-input, select { 
-  padding: 8px 12px; 
-  border: none; 
-  border-radius: 4px; 
+
+.filter-select { 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
   background: rgba(255,255,255,0.1); 
   color: white; 
-  backdrop-filter: blur(5px); 
+  font-size: 1rem;
+  min-width: 180px;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
 }
-input[type="text"] { width: 200px; }
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.15);
+  box-shadow: 0 0 0 3px rgba(13,110,253,0.25);
+}
 
 /* 9x9 Grid Controls */
 .grid-controls { 
-  margin: 15px 0; 
-  padding: 15px; 
+  margin: 1.5rem 0; 
+  padding: 1.5rem; 
   background: rgba(255,255,255,0.05); 
-  border-radius: 8px; 
-  backdrop-filter: blur(5px); 
+  border-radius: 12px; 
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
 }
+
 .grid-controls h3 { 
-  margin: 0 0 10px 0; 
+  margin: 0 0 1rem 0; 
   color: var(--primary); 
+  font-size: 1.25rem;
+  font-weight: 600;
 }
+
 .grid-url { 
   display: flex; 
-  gap: 5px; 
-  margin-bottom: 5px; 
+  gap: 0.75rem; 
+  margin-bottom: 0.75rem; 
   align-items: center; 
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
 }
+
 .grid-url input { 
   flex: 1; 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
   background: rgba(255,255,255,0.1); 
   color: white; 
-  backdrop-filter: blur(5px); 
+  font-size: 1rem;
+  backdrop-filter: blur(5px);
 }
+
 .grid-url button { 
-  width: 80px; 
-  background: #dc3545; 
+  width: 60px; 
+  height: 42px;
+  padding: 0;
+  background: var(--danger); 
+  color: white;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+.grid-url button:hover {
+  background: #c82333;
+}
+
+.add-url-btn {
+  background: var(--secondary);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  width: auto;
+}
+
+.add-url-btn:hover {
+  background: #5e37a6;
+}
+
 .grid-actions { 
   display: flex; 
-  gap: 10px; 
-  margin-top: 10px; 
+  gap: 1rem; 
+  margin-top: 1rem; 
+  flex-wrap: wrap;
 }
 
 /* Devices Grid */
 .devices-grid { 
   display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-  gap: 15px; 
-  margin-top: 20px; 
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 1.5rem; 
+  margin-top: 1.5rem; 
 }
 
 /* Device Card */
 .device-card { 
-  background: #333; 
-  padding: 15px; 
-  border-radius: 8px; 
-  transition: all 0.3s; 
-  border: 1px solid rgba(255,255,255,0.1); 
+  background: var(--card-bg); 
+  padding: 1.5rem; 
+  border-radius: 12px; 
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
+
 .device-card:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3); 
+  transform: translateY(-4px); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  border-color: var(--primary);
 }
+
 .device-header { 
   display: flex; 
   justify-content: space-between; 
-  margin-bottom: 10px; 
-  padding-bottom: 8px; 
-  border-bottom: 1px solid rgba(255,255,255,0.1); 
+  margin-bottom: 1rem; 
+  padding-bottom: 0.75rem; 
+  border-bottom: 1px solid var(--border); 
 }
+
+.device-name { 
+  font-size: 1.1rem; 
+  font-weight: 600; 
+  color: white;
+  margin: 0;
+}
+
 .status { 
-  padding: 2px 8px; 
-  border-radius: 12px; 
+  padding: 0.4rem 0.8rem; 
+  border-radius: 20px; 
   font-size: 0.8rem; 
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
-.online { background: #28a745; }
-.offline { background: #dc3545; }
+
+.status-online { 
+  background: var(--success); 
+  color: white;
+}
+
+.status-offline { 
+  background: var(--danger); 
+  color: white;
+}
+
 .device-info { 
-  margin: 10px 0; 
+  margin: 1rem 0; 
   font-size: 0.9rem; 
   color: rgba(255,255,255,0.7); 
+  line-height: 1.6;
 }
+
+.device-info div {
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-info strong {
+  color: white;
+  min-width: 80px;
+  display: inline-block;
+}
+
 .content-assign { 
-  margin-top: 10px; 
-  padding-top: 10px; 
-  border-top: 1px solid rgba(255,255,255,0.1); 
+  margin-top: 1rem; 
+  padding-top: 1rem; 
+  border-top: 1px solid var(--border); 
 }
+
 .content-assign input { 
   width: 100%; 
-  margin: 5px 0; 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
   background: rgba(255,255,255,0.1); 
   color: white; 
-  backdrop-filter: blur(5px); 
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  backdrop-filter: blur(5px);
 }
-.cast-wall { 
-  background: var(--accent); 
-  margin-top: 10px; 
-  width: 100%; 
+
+.content-assign input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.15);
+}
+
+.cast-btn { 
+  background: var(--success); 
+  color: white; 
+  padding: 0.75rem 1.5rem; 
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.cast-btn:hover {
+  background: #157347;
+  transform: translateY(-1px);
 }
 
 /* Footer */
@@ -178,30 +390,41 @@ input[type="text"] { width: 200px; }
   background: rgba(0,0,0,0.5); 
   color: rgba(255,255,255,0.7); 
   text-align: center; 
-  padding: 15px; 
+  padding: 1.5rem; 
   font-size: 0.9rem; 
-  border-top: 1px solid rgba(255,255,255,0.1); 
-}
-.footer a { 
-  color: var(--primary); 
-  text-decoration: none; 
-}
-.footer a:hover { 
-  text-decoration: underline; 
+  border-top: 1px solid var(--border); 
+  margin-top: auto;
 }
 </style>
 </head>
 <body>
 <!-- Header -->
 <header class="header">
-  <h1>
-    <img src="assets/logo.png" alt="ADAM Signage Logo">
-    ADAM Enterprise Signage
-  </h1>
+  <div class="header-content">
+    <div class="logo">A</div>
+    <h1>ADAM Enterprise Signage</h1>
+  </div>
   <div class="controls">
-    <button onclick="refreshDevices()">Refresh</button>
-    <button onclick="castToWall()">Cast to Wall</button>
-    <button onclick="syncAll()">Sync All</button>
+    <button class="btn btn-primary" onclick="refreshDevices()">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/>
+        <path d="M8 4.466V.534a.5.5 0 0 0-1 0v3.932a.5.5 0 0 0 1 0z"/>
+      </svg>
+      Refresh
+    </button>
+    <button class="btn btn-success" onclick="castToWall()">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+      </svg>
+      Cast to Wall
+    </button>
+    <button class="btn btn-secondary" onclick="syncAll()">
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+        <path d="M7.646 1.646a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 3.207V13.5a.5.5 0 0 1-1 0V3.207L5.354 5.354a.5.5 0 1 1-.708-.708l3-3z"/>
+      </svg>
+      Sync All
+    </button>
   </div>
 </header>
 
@@ -209,17 +432,43 @@ input[type="text"] { width: 200px; }
 <div class="container">
   <div class="main-content">
     <div class="filters">
-      <!-- Filters content remains the same -->
-      <div class="control-group">
-        <label>State:</label>
-        <select id="stateFilter" onchange="filterDevices()">
+      <div class="filter-group">
+        <label for="stateFilter">State</label>
+        <select id="stateFilter" class="filter-select" onchange="filterDevices()">
           <option value="all">All States</option>
           <option value="Maharashtra">Maharashtra</option>
           <option value="Tamil Nadu">Tamil Nadu</option>
           <option value="Karnataka">Karnataka</option>
         </select>
       </div>
-      <!-- Other filters remain the same -->
+      <div class="filter-group">
+        <label for="regionFilter">Region</label>
+        <select id="regionFilter" class="filter-select" onchange="filterDevices()">
+          <option value="all">All Regions</option>
+          <option value="Mumbai Metro">Mumbai Metro</option>
+          <option value="Pune">Pune</option>
+          <option value="Chennai">Chennai</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="locationFilter">Location</label>
+        <select id="locationFilter" class="filter-select" onchange="filterDevices()">
+          <option value="all">All Locations</option>
+          <option value="Corporate Office">Corporate Office</option>
+          <option value="Retail Store">Retail Store</option>
+          <option value="Factory">Factory</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="languageFilter">Language</label>
+        <select id="languageFilter" class="filter-select" onchange="filterDevices()">
+          <option value="all">All Languages</option>
+          <option value="en">English</option>
+          <option value="hi">Hindi</option>
+          <option value="mr">Marathi</option>
+          <option value="ta">Tamil</option>
+        </select>
+      </div>
     </div>
 
 
