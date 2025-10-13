@@ -117,10 +117,7 @@ document.getElementById('castBtn').addEventListener('click', async ()=>{
     session.sendMessage('urn:x-cast:com.yourcompany.signage', message, ()=>{}, (err)=>{ console.error(err) });
   }).catch(e=>{ console.error('Cast failed', e); alert('Cast failed: '+e.message) });
 });
-// add to bottom script:
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  window.location.href = 'sender.html';
-}
+
 
 // init
 loadPlaylists();
