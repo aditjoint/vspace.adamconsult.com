@@ -1,51 +1,21 @@
 {
   "Lobby": {
     "en": [
-      {
-        "name": "Morning Loop",
-        "start": "09:00",
-        "end": "12:00",
-        "loop": true,
-        "items": [
-          { "type":"video","src":"https://example.com/ads/intro.mp4","duration":20 },
-          { "type":"image","src":"https://raw.githubusercontent.com/your/repo/main/assets/promo.jpg","duration":12 },
-          { "type":"hls","src":"https://cdn.example.com/live/playlist.m3u8","duration":60 }
-        ]
-      },
-      {
-        "name": "Afternoon Loop",
-        "start": "12:00",
-        "end": "15:00",
-        "loop": true,
-        "items": [
-          { "type":"video","src":"https://example.com/ads/afternoon.mp4","duration":15 },
-          { "type":"image","src":"https://raw.githubusercontent.com/your/repo/main/assets/promo2.jpg","duration":10 }
-        ]
-      }
+      { "start":"09:00","end":"12:00","type":"hls","url":"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" },
+      { "start":"12:00","end":"15:00","type":"hls","url":"https://test-streams.mux.dev/bbb_30fps/bbb_30fps.m3u8" }
     ],
     "hi": [
-      {
-        "name": "Hindi Morning",
-        "start": "09:00",
-        "end": "12:00",
-        "loop": true,
-        "items": [
-          { "type":"youtube","src":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","duration":60 }
-        ]
-      }
+      { "start":"09:00","end":"12:00","type":"youtube","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
     ]
   },
   "Shop": {
     "en": [
-      {
-        "name": "Shop Full Day",
-        "start": "09:00",
-        "end": "18:00",
-        "loop": true,
-        "items": [
-          { "type":"hls","src":"https://test-streams.mux.dev/test_001/stream.m3u8","duration":120 }
-        ]
-      }
+      { "start":"09:00","end":"18:00","type":"hls","url":"https://test-streams.mux.dev/test_001/stream.m3u8" }
+    ]
+  },
+  "Conference": {
+    "en": [
+      { "start":"10:00","end":"17:00","type":"image","url":"https://via.placeholder.com/1920x1080.png" }
     ]
   }
 }
