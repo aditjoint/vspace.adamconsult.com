@@ -1,21 +1,13 @@
 {
-  "Lobby": {
-    "en": [
-      { "start":"09:00","end":"12:00","type":"hls","url":"https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" },
-      { "start":"12:00","end":"15:00","type":"hls","url":"https://test-streams.mux.dev/bbb_30fps/bbb_30fps.m3u8" }
-    ],
-    "hi": [
-      { "start":"09:00","end":"12:00","type":"youtube","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
-    ]
-  },
-  "Shop": {
-    "en": [
-      { "start":"09:00","end":"18:00","type":"hls","url":"https://test-streams.mux.dev/test_001/stream.m3u8" }
-    ]
-  },
-  "Conference": {
-    "en": [
-      { "start":"10:00","end":"17:00","type":"image","url":"https://via.placeholder.com/1920x1080.png" }
-    ]
-  }
+  "tiles": [
+    {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
+    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+2"},
+    {"url": "https://www.youtube.com/watch?v=9bZkp7q19f0"},
+    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+4"},
+    {"url": "https://www.youtube.com/watch?v=jNQXAC9IVRw"},
+    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+6"},
+    {"url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"},
+    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
+    {"url": "https://www.youtube.com/watch?v=60ItHLz5WEA"}
+  ]
 }
