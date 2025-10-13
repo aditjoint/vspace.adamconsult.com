@@ -1,24 +1,18 @@
-// Fullscreen
-document.getElementById("fullscreenBtn").addEventListener("click", () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
-  } else {
-    document.exitFullscreen();
-  }
-});
+function enterFullscreen() {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) elem.requestFullscreen();
+  else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
+}
 
-// Picture-in-Picture
-document.getElementById("pipBtn").addEventListener("click", async () => {
-  const videos = document.querySelectorAll("video");
-  const activeVideo = videos[0];
-  try {
-    if (document.pictureInPictureElement) {
-      await document.exitPictureInPicture();
-    } else {
-      await activeVideo.requestPictureInPicture();
+async function enablePiP() {
+  const video = document.getElementById("mainVideo");
+  if (document.pictureInPictureElement) {
+    await document.exitPictureInPicture();
+  } else if (video) {
+    try {
+      await video.requestPictureInPicture();
+    } catch (err) {
+      alert("PiP not supported in this browser.");
     }
-  } catch (error) {
-    alert("PiP not supported in this browser.");
   }
-});
-
+}
