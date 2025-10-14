@@ -7,7 +7,9 @@
       "zone": "Lobby Screens",
       "location": "Corporate Office",
       "status": "online",
-      "model": "Chromecast"
+      "model": "Chromecast",
+      "registeredAt": "2025-10-14T06:00:00Z",
+      "lastSeen": "2025-10-14T06:00:00Z"
     }
   ]
 }
