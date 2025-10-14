@@ -7,34 +7,43 @@
 <script src="//www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
-body, html { 
-  margin: 0; 
-  padding: 0; 
-  width: 100%; 
-  height: 100%; 
-  overflow: hidden; 
-  background: #000; 
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
-.grid-container { 
-  display: grid; 
-  grid-template-columns: repeat(9, 1fr); 
-  grid-template-rows: repeat(9, 1fr); 
-  width: 100%; 
-  height: 100%; 
-  gap: 2px; 
+
+/* 9x9 Grid Container */
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  width: 100%;
+  height: 100%;
+  gap: 2px;
+  background: #111;
 }
-.grid-item { 
-  background: #111; 
-  position: relative; 
-  overflow: hidden; 
+
+/* Grid Item */
+.grid-item {
+  background: #000;
+  position: relative;
+  overflow: hidden;
 }
-.grid-item video, 
-.grid-item img, 
-.grid-item iframe { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: contain; 
+
+.grid-item video,
+.grid-item img,
+.grid-item iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
+
 .grid-item::after {
   content: attr(data-index);
   position: absolute;
@@ -48,24 +57,31 @@ body, html {
   border-radius: 3px;
   font-family: monospace;
 }
-#fullscreen { 
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 100%; 
-  background: #000; 
-  z-index: 1000; 
-  display: none; 
+
+/* Fullscreen Mode */
+#fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  z-index: 1000;
+  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 #fullscreen video,
 #fullscreen img,
 #fullscreen iframe {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
-/* Clock overlay for scheduled content */
+
+/* Clock Overlay */
 .clock-overlay {
   position: absolute;
   top: 10px;
@@ -78,7 +94,8 @@ body, html {
   font-size: 12px;
   z-index: 2000;
 }
-/* Schedule indicator */
+
+/* Schedule Indicator */
 .schedule-indicator {
   position: absolute;
   bottom: 10px;
@@ -90,6 +107,21 @@ body, html {
   font-size: 12px;
   z-index: 2000;
 }
+
+/* Error Display */
+.error-display {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  z-index: 3000;
+  max-width: 80%;
+}
 </style>
 </head>
 <body>
@@ -97,6 +129,7 @@ body, html {
 <div id="fullscreen"></div>
 <div class="clock-overlay" id="clock"></div>
 <div class="schedule-indicator" id="scheduleInfo" style="display:none;"></div>
+<div class="error-display" id="errorDisplay" style="display:none;"></div>
 
 <script>
 const context = cast.framework.CastReceiverContext.getInstance();
@@ -106,6 +139,7 @@ const tiles = [];
 const fullscreen = document.getElementById('fullscreen');
 const clock = document.getElementById('clock');
 const scheduleInfo = document.getElementById('scheduleInfo');
+const errorDisplay = document.getElementById('errorDisplay');
 
 // Create 9x9 grid
 for (let i = 0; i < 81; i++) {
@@ -129,6 +163,216 @@ updateClock();
 let currentSchedule = null;
 let scheduleTimer = null;
 
+// Error handling
+function showError(message) {
+  errorDisplay.textContent = message;
+  errorDisplay.style.display = 'block';
+  setTimeout(() => {
+    errorDisplay.style.display = 'none';
+  }, 5000);
+}
+
+// Clear error
+function clearError() {
+  errorDisplay.style.display = 'none';
+}
+
+// Handle load requests
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
+  console.log('Load request:', request);
+  
+  // Clear any existing schedule
+  if (scheduleTimer) {
+    clearTimeout(scheduleTimer);
+    scheduleTimer = null;
+  }
+  
+  // Hide schedule info
+  scheduleInfo.style.display = 'none';
+  currentSchedule = null;
+  
+  // Clear error display
+  clearError();
+  
+  // Handle different content types
+  if (request.customData && request.customData.mode === 'youtube') {
+    // YouTube content
+    handleYouTubeContent(request.customData);
+    
+  } else if (request.customData && request.customData.gridMode === 'pip9x9') {
+    // 9x9 Grid mode
+    handleGridContent(request.customData);
+    
+  } else if (request.customData && request.customData.scheduleId) {
+    // Scheduled content mode
+    handleScheduledContent(request.customData);
+    
+  } else if (request.media && request.media.contentId) {
+    // Single content mode
+    handleSingleContent(request.media.contentId);
+  }
+  
+  return request;
+});
+
+// Handle YouTube content
+function handleYouTubeContent(customData) {
+  // Clear all tiles
+  tiles.forEach(tile => tile.innerHTML = '');
+  fullscreen.style.display = 'flex';
+  fullscreen.innerHTML = '';
+  
+  const videoId = customData.videoId;
+  if (videoId) {
+    const iframe = document.createElement('iframe');
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&modestbranding=1&rel=0`;
+    iframe.allow = 'autoplay; fullscreen';
+    iframe.style.cssText = 'width:100%;height:100%;border:none;';
+    fullscreen.appendChild(iframe);
+  } else {
+    showError('Invalid YouTube video ID');
+  }
+}
+
+// Handle 9x9 grid content
+function handleGridContent(customData) {
+  // Clear fullscreen
+  fullscreen.style.display = 'none';
+  fullscreen.innerHTML = '';
+  
+  // Clear all tiles
+  tiles.forEach(tile => tile.innerHTML = '');
+  
+  if (customData.urls && Array.isArray(customData.urls)) {
+    customData.urls.forEach((url, index) => {
+      if (index < 81 && url) {
+        loadContent(tiles[index], url);
+      }
+    });
+  }
+}
+
+// Handle single content
+function handleSingleContent(contentUrl) {
+  // Clear all tiles
+  tiles.forEach(tile => tile.innerHTML = '');
+  
+  // Show fullscreen
+  fullscreen.style.display = 'flex';
+  fullscreen.innerHTML = '';
+  
+  loadContent(fullscreen, contentUrl);
+}
+
+// Handle scheduled content
+function handleScheduledContent(scheduleData) {
+  // Clear current display
+  tiles.forEach(tile => tile.innerHTML = '');
+  fullscreen.style.display = 'none';
+  fullscreen.innerHTML = '';
+  
+  // Display schedule info
+  scheduleInfo.textContent = `Schedule: ${scheduleData.name}`;
+  scheduleInfo.style.display = 'block';
+  
+  // Load content based on schedule
+  if (scheduleData.gridMapping) {
+    scheduleData.gridMapping.forEach(item => {
+      if (item.tile < tiles.length && item.contentUrl) {
+        loadContent(tiles[item.tile], item.contentUrl);
+      }
+    });
+  }
+  
+  // Set up schedule end
+  if (scheduleData.endTime) {
+    const end = new Date(scheduleData.endTime);
+    const now = new Date();
+    const delay = end.getTime() - now.getTime();
+    
+    if (delay > 0) {
+      scheduleTimer = setTimeout(() => {
+        // Clear schedule
+        tiles.forEach(tile => tile.innerHTML = '');
+        fullscreen.style.display = 'none';
+        fullscreen.innerHTML = '';
+        scheduleInfo.style.display = 'none';
+        currentSchedule = null;
+      }, delay);
+    }
+  }
+  
+  currentSchedule = scheduleData;
+}
+
+// Load content into container
+function loadContent(container, url) {
+  container.innerHTML = '';
+  
+  // Handle YouTube URLs
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let videoId = '';
+    if (url.includes('v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    
+    if (videoId) {
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1`;
+      iframe.allow = 'autoplay; encrypted-media';
+      iframe.frameBorder = '0';
+      container.appendChild(iframe);
+    } else {
+      showError('Invalid YouTube URL');
+    }
+  } 
+  // Handle image URLs
+  else if (url.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
+    const img = document.createElement('img');
+    img.src = url;
+    img.onload = () => console.log('Image loaded:', url);
+    img.onerror = () => showError('Failed to load image: ' + url);
+    container.appendChild(img);
+  } 
+  // Handle video URLs
+  else if (url.match(/\.(mp4|webm|ogg)$/i)) {
+    const video = document.createElement('video');
+    video.src = url;
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.onloadedmetadata = () => console.log('Video loaded:', url);
+    video.onerror = () => showError('Failed to load video: ' + url);
+    container.appendChild(video);
+  } 
+  // Handle HLS streams
+  else if (url.includes('.m3u8')) {
+    const video = document.createElement('video');
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    container.appendChild(video);
+    
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('HLS stream loaded:', url);
+      });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('HLS error:', data);
+        if (data.fatal) {
+          showError('HLS stream
+
+
+
+
+  
 // Handle load requests
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
   console.log('Load request:', request);
