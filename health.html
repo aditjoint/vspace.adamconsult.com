@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System Health Check</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    .status { padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+    .healthy { background: #d4edda; color: #155724; }
+    .warning { background: #fff3cd; color: #856404; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
+</head>
+<body>
+  <h1>ADAM Signage System Health</h1>
+  <div id="health-check"></div>
+  
+  <script>
+    async function checkHealth() {
+      const checks = [
+        { name: "GitHub Pages", check: () => true },
+        { name: "HTTPS", check: () => window.location.protocol === 'https:' },
+        { name: "Service Worker", check: () => 'serviceWorker' in navigator },
+        { name: "Cache", check: () => 'caches' in window },
+        { name: "Fetch API", check: () => 'fetch' in window }
+      ];
+      
+      const results = await Promise.all(
+        checks.map(async check => {
+          try {
+            const result = await check.check();
+            return { ...check, result, status: result ? 'healthy' : 'error' };
+          } catch (e) {
+            return { ...check, result: false, status: 'error' };
+          }
+        })
+      );
+      
+      const container = document.getElementById('health-check');
+      container.innerHTML = results.map(r => `
+        <div class="status ${r.status}">
+          <strong>${r.name}</strong>: ${r.result ? 'Healthy' : 'Failed'}
+        </div>
+      `).join('');
+    }
+    
+    checkHealth();
+  </script>
+</body>
+</html>
