@@ -1,0 +1,13 @@
+{
+  "devices": [
+    {
+      "id": "DEV-001",
+      "name": "Lobby Display 1",
+      "ip": "192.168.1.101",
+      "zone": "Lobby Screens",
+      "location": "Corporate Office",
+      "status": "online",
+      "model": "Chromecast"
+    }
+  ]
+}
