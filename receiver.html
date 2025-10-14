@@ -367,55 +367,34 @@ function loadContent(container, url) {
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS error:', data);
         if (data.fatal) {
-          showError('HLS stream
-
-
-
-
-  
-// Handle load requests
-playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
-  console.log('Load request:', request);
-  
-  // Clear any existing schedule
-  if (scheduleTimer) {
-    clearTimeout(scheduleTimer);
-    scheduleTimer = null;
-  }
-  
-  // Hide schedule info
-  scheduleInfo.style.display = 'none';
-  currentSchedule = null;
-  
-  // Handle different content types
-  if (request.customData && request.customData.gridMode === 'pip9x9') {
-    // 9x9 Grid mode
-    tiles.forEach(tile => tile.innerHTML = '');
-    
-    if (request.customData.urls && Array.isArray(request.customData.urls)) {
-      request.customData.urls.forEach((url, index) => {
-        if (index < 81) {
-          loadContent(tiles[index], url);
+          showError('HLS stream error: ' + data.type);
         }
       });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = url;
+      video.addEventListener('loadedmetadata', () => {
+        console.log('Native HLS loaded:', url);
+      });
+    } else {
+      showError('HLS not supported on this device');
     }
-    
-  } else if (request.customData && request.customData.scheduleId) {
-    // Scheduled content mode
-    handleScheduledContent(request.customData);
-    
-  } else if (request.media && request.media.contentId) {
-    // Single content mode
-    tiles.forEach(tile => tile.innerHTML = '');
-    fullscreen.style.display = 'block';
-    loadContent(fullscreen, request.media.contentId);
+  } 
+  // Handle other URLs
+  else {
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.allow = 'autoplay; fullscreen';
+    iframe.frameBorder = '0';
+    iframe.style.cssText = 'width:100%;height:100%;border:none;';
+    iframe.onload = () => console.log('Iframe loaded:', url);
+    iframe.onerror = () => showError('Failed to load iframe: ' + url);
+    container.appendChild(iframe);
   }
-  
-  return request;
-});
+}
 
 // Handle stop requests
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.STOP, request => {
+  // Clear all content
   tiles.forEach(tile => tile.innerHTML = '');
   fullscreen.style.display = 'none';
   fullscreen.innerHTML = '';
@@ -430,115 +409,6 @@ playerManager.setMessageInterceptor(cast.framework.messages.MessageType.STOP, re
   
   return request;
 });
-
-// Handle scheduled content
-function handleScheduledContent(scheduleData) {
-  // Clear current display
-  tiles.forEach(tile => tile.innerHTML = '');
-  fullscreen.style.display = 'none';
-  
-  // Display schedule info
-  scheduleInfo.textContent = `Schedule: ${scheduleData.name}`;
-  scheduleInfo.style.display = 'block';
-  
-  // Load content based on schedule
-  if (scheduleData.gridMapping) {
-    scheduleData.gridMapping.forEach(item => {
-      if (item.tile < tiles.length && item.contentUrl) {
-        loadContent(tiles[item.tile], item.contentUrl);
-      }
-    });
-  }
-  
-  // Set up schedule end
-  if (scheduleData.endTime) {
-    const end = new Date(scheduleData.endTime);
-    const now = new Date();
-    const delay = end.getTime() - now.getTime();
-    
-    if (delay > 0) {
-      scheduleTimer = setTimeout(() => {
-        // Clear schedule
-        tiles.forEach(tile => tile.innerHTML = '');
-        scheduleInfo.style.display = 'none';
-        currentSchedule = null;
-      }, delay);
-    }
-  }
-  
-  currentSchedule = scheduleData;
-}
-
-// Load content into container
-function loadContent(container, url) {
-  container.innerHTML = '';
-  
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    let videoId = '';
-    if (url.includes('v=')) {
-      videoId = url.split('v=')[1].split('&')[0];
-    } else if (url.includes('youtu.be/')) {
-      videoId = url.split('youtu.be/')[1].split('?')[0];
-    }
-    
-    if (videoId) {
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1`;
-      iframe.allow = 'autoplay; encrypted-media';
-      iframe.frameBorder = '0';
-      container.appendChild(iframe);
-    }
-  } else if (url.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
-    const img = document.createElement('img');
-    img.src = url;
-    img.onload = () => console.log('Image loaded:', url);
-    img.onerror = () => console.error('Image failed to load:', url);
-    container.appendChild(img);
-  } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
-    const video = document.createElement('video');
-    video.src = url;
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.onloadedmetadata = () => console.log('Video loaded:', url);
-    video.onerror = () => console.error('Video failed to load:', url);
-    container.appendChild(video);
-  } else if (url.includes('.m3u8')) {
-    const video = document.createElement('video');
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-    video.playsInline = true;
-    container.appendChild(video);
-    
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS stream loaded:', url);
-      });
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error('HLS error:', data);
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = url;
-      video.addEventListener('loadedmetadata', () => {
-        console.log('Native HLS loaded:', url);
-      });
-    }
-  } else {
-    const iframe = document.createElement('iframe');
-    iframe.src = url;
-    iframe.allow = 'autoplay; fullscreen';
-    iframe.frameBorder = '0';
-    iframe.style.border = 'none';
-    iframe.onload = () => console.log('Iframe loaded:', url);
-    iframe.onerror = () => console.error('Iframe failed to load:', url);
-    container.appendChild(iframe);
-  }
-}
 
 // Handle pause/resume
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PAUSE, request => {
@@ -566,4 +436,3 @@ context.start();
 </script>
 </body>
 </html>
-
