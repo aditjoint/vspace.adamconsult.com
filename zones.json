@@ -2,14 +2,15 @@
   "zones": [
     {
       "name": "Lobby Screens",
-      "description": "Main lobby displays",
+      "description": "Main entrance displays",
       "devices": ["DEV-001", "DEV-002"],
       "gridLayout": {
         "rows": 9,
         "columns": 9,
         "regions": [
           { "name": "Main News", "tiles": [0,1,2,9,10,11] },
-          { "name": "Weather", "tiles": [3] }
+          { "name": "Weather", "tiles": [3] },
+          { "name": "Promotions", "tiles": [4,5,13,14] }
         ]
       }
     }
