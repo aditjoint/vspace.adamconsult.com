@@ -133,13 +133,13 @@ button:hover {
   <div class="section">
     <h2>Content Library & Playlists</h2>
     <div>
-      <input type="text" id="libraryUrl" placeholder="Add URL to library">
-      <button onclick="addToLibrary()">Add to Library</button>
+      <select id="contentLibrary" style="width: auto; margin: 0.5rem 0;">
+        <option value="">Select from Library</option>
+      </select>
+      <button onclick="loadFromLibrary()">Load to Grid</button>
     </div>
     <select id="playlistSelect" style="width: auto; margin: 0.5rem 0;">
       <option value="">Select Playlist</option>
-      <option value="morning">Morning Display</option>
-      <option value="evening">Evening Display</option>
     </select>
     <button onclick="loadPlaylist()">Load</button>
     <button onclick="savePlaylist()">Save</button>
@@ -154,8 +154,6 @@ button:hover {
       <input type="datetime-local" id="endTime" placeholder="End Time">
       <select id="targetZone">
         <option value="all">All Devices</option>
-        <option value="lobby">Lobby Screens</option>
-        <option value="factory">Factory Floor</option>
       </select>
       <button class="cast-btn" onclick="scheduleCast()">Schedule Cast</button>
     </div>
@@ -185,7 +183,9 @@ button:hover {
 
 <script>
 let castSession = null;
-let contentLibrary = JSON.parse(localStorage.getItem('adamLibrary') || '[]');
+let contentLibrary = [];
+let playlists = [];
+let zones = [];
 let currentPlaylist = [];
 
 // Initialize Cast Framework
@@ -344,42 +344,96 @@ function connectToRemote() {
   alert('Attempting to connect to remote device. Ensure remote access is enabled on your Google TV and the network is properly configured.');
 }
 
-// Content Library Functions
-function addToLibrary() {
-  const url = document.getElementById('libraryUrl').value.trim();
-  if (!url) {
-    alert('Enter a URL to add to library');
-    return;
-  }
-  
-  if (!contentLibrary.includes(url)) {
-    contentLibrary.push(url);
-    localStorage.setItem('adamLibrary', JSON.stringify(contentLibrary));
-    alert('URL added to library!');
-    document.getElementById('libraryUrl').value = '';
+// Load all data from JSON files
+async function loadData() {
+  try {
+    // Load content library
+    const libraryResponse = await fetch('content-library.json');
+    const libraryData = await libraryResponse.json();
+    contentLibrary = libraryData.items || [];
+    populateContentLibrary();
+    
+    // Load playlists
+    const playlistsResponse = await fetch('playlists.json');
+    const playlistsData = await playlistsResponse.json();
+    playlists = playlistsData.playlists || [];
+    populatePlaylists();
+    
+    // Load zones
+    const zonesResponse = await fetch('zones.json');
+    const zonesData = await zonesResponse.json();
+    zones = zonesData.zones || [];
+    populateZones();
+    
+  } catch (error) {
+    console.error('Error loading data:', error);
+    alert('Error loading configuration data. Please check that all JSON files are present and accessible.');
   }
 }
 
-// Playlist Functions
-function savePlaylist() {
-  const playlistName = prompt('Enter playlist name:');
-  if (!playlistName) return;
+function populateContentLibrary() {
+  const select = document.getElementById('contentLibrary');
+  select.innerHTML = '<option value="">Select from Library</option>';
   
-  const playlistData = {
-    name: playlistName,
-    urls: currentPlaylist,
-    savedAt: new Date().toISOString()
-  };
-  
-  localStorage.setItem(`adamPlaylist_${playlistName}`, JSON.stringify(playlistData));
-  alert(`Playlist "${playlistName}" saved!`);
-  
-  // Update dropdown
+  contentLibrary.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.url;
+    option.textContent = item.name;
+    select.appendChild(option);
+  });
+}
+
+function populatePlaylists() {
   const select = document.getElementById('playlistSelect');
-  const option = document.createElement('option');
-  option.value = playlistName;
-  option.textContent = playlistName;
-  select.appendChild(option);
+  select.innerHTML = '<option value="">Select Playlist</option>';
+  
+  playlists.forEach(playlist => {
+    const option = document.createElement('option');
+    option.value = playlist.name;
+    option.textContent = playlist.name;
+    select.appendChild(option);
+  });
+}
+
+function populateZones() {
+  const select = document.getElementById('targetZone');
+  select.innerHTML = '<option value="all">All Devices</option>';
+  
+  zones.forEach(zone => {
+    const option = document.createElement('option');
+    option.value = zone.name;
+    option.textContent = zone.name;
+    select.appendChild(option);
+  });
+}
+
+function loadFromLibrary() {
+  const select = document.getElementById('contentLibrary');
+  const url = select.value;
+  
+  if (!url) {
+    alert('Please select an item from the library');
+    return;
+  }
+  
+  // Add to first empty grid input or create new one
+  const inputs = document.querySelectorAll('#gridInputs input');
+  let added = false;
+  
+  inputs.forEach(input => {
+    if (!input.value.trim() && !added) {
+      input.value = url;
+      added = true;
+    }
+  });
+  
+  if (!added) {
+    addGridInput();
+    const inputs = document.querySelectorAll('#gridInputs input');
+    inputs[inputs.length - 1].value = url;
+  }
+  
+  alert('Content added to grid!');
 }
 
 function loadPlaylist() {
@@ -390,16 +444,13 @@ function loadPlaylist() {
     return;
   }
   
-  const saved = localStorage.getItem(`adamPlaylist_${name}`);
-  if (saved) {
-    const data = JSON.parse(saved);
-    currentPlaylist = data.urls;
-    
+  const playlist = playlists.find(p => p.name === name);
+  if (playlist) {
     // Clear and repopulate grid inputs
     const container = document.getElementById('gridInputs');
     container.innerHTML = '';
     
-    data.urls.forEach(url => {
+    playlist.gridUrls.forEach(url => {
       const div = document.createElement('div');
       div.className = 'grid-input';
       div.innerHTML = `
@@ -413,7 +464,24 @@ function loadPlaylist() {
   }
 }
 
-// Scheduling Function
+function savePlaylist() {
+  const name = prompt('Enter playlist name:');
+  if (!name) return;
+  
+  const urls = Array.from(document.querySelectorAll('#gridInputs input'))
+    .map(i => i.value.trim())
+    .filter(v => v);
+  
+  if (urls.length === 0) {
+    alert('Cannot save empty playlist');
+    return;
+  }
+  
+  // In production, you would send this to a server
+  // For demo, show success
+  alert(`Playlist "${name}" would be saved to server!`);
+}
+
 function scheduleCast() {
   const name = document.getElementById('scheduleName').value.trim();
   const start = document.getElementById('startTime').value;
@@ -425,21 +493,21 @@ function scheduleCast() {
     return;
   }
   
+  const gridUrls = Array.from(document.querySelectorAll('#gridInputs input'))
+    .map(i => i.value.trim())
+    .filter(v => v);
+  
   const schedule = {
     name,
     start,
     end,
     zone,
-    gridUrls: Array.from(document.querySelectorAll('#gridInputs input')).map(i => i.value).filter(v => v),
+    gridUrls,
     scheduledAt: new Date().toISOString()
   };
   
-  // Save to localStorage
-  const schedules = JSON.parse(localStorage.getItem('adamSchedules') || '[]');
-  schedules.push(schedule);
-  localStorage.setItem('adamSchedules', JSON.stringify(schedules));
-  
-  alert(`Schedule "${name}" created! It will run from ${start} to ${end} on ${zone}`);
+  // In production, you would send this to a server
+  alert(`Schedule "${name}" would be saved to server and executed from ${start} to ${end} on ${zone}!`);
 }
 
 // Initialize with 3 inputs
@@ -447,20 +515,9 @@ for (let i = 0; i < 3; i++) {
   addGridInput();
 }
 
-// Load library and playlists on startup
+// Load all data on startup
 window.onload = function() {
-  // Load saved playlists into dropdown
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('adamPlaylist_')) {
-      const name = key.replace('adamPlaylist_', '');
-      const select = document.getElementById('playlistSelect');
-      const option = document.createElement('option');
-      option.value = name;
-      option.textContent = name;
-      select.appendChild(option);
-    }
-  }
+  loadData();
 };
 </script>
 </body>
