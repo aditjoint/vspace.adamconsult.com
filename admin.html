@@ -4,9 +4,398 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADAM Enterprise Signage - Admin Panel</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https:;">
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="styles.css">
+<style>
+:root { 
+  --primary: #0d6efd; 
+  --secondary: #6f42c1; 
+  --success: #198754; 
+  --danger: #dc3545; 
+  --dark: #212529; 
+  --light: #f8f9fa; 
+  --gray: #6c757d;
+  --background: #1a1a1a;
+  --card-bg: #2d2d2d;
+  --border: #404040;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--background); 
+  color: var(--light); 
+  margin: 0; 
+  padding: 0; 
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+.container { 
+  max-width: 1600px; 
+  margin: 0 auto; 
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  padding: 1rem 2rem; 
+  background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  height: 48px;
+  width: 48px;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.header h1 { 
+  font-size: 1.8rem; 
+  color: white; 
+  margin: 0; 
+  font-weight: 600;
+}
+
+.controls { 
+  display: flex; 
+  gap: 0.75rem; 
+  flex-wrap: wrap; 
+}
+
+.btn { 
+  padding: 0.6rem 1.25rem; 
+  border: none; 
+  border-radius: 8px; 
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer; 
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: rgba(255,255,255,0.2);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: rgba(255,255,255,0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+
+.btn-success:hover {
+  background: #157347;
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5e37a6;
+}
+
+/* Main Content */
+.main-content { 
+  padding: 2rem; 
+  flex: 1;
+}
+
+/* Filters */
+.filters { 
+  display: flex; 
+  gap: 1.5rem; 
+  margin: 1.5rem 0; 
+  flex-wrap: wrap; 
+  background: rgba(255,255,255,0.05); 
+  padding: 1.5rem; 
+  border-radius: 12px; 
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+.filter-group { 
+  display: flex; 
+  flex-direction: column;
+  gap: 0.5rem; 
+}
+
+.filter-group label { 
+  font-weight: 600; 
+  color: rgba(255,255,255,0.9); 
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-select { 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
+  background: rgba(255,255,255,0.1); 
+  color: white; 
+  font-size: 1rem;
+  min-width: 180px;
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.15);
+  box-shadow: 0 0 0 3px rgba(13,110,253,0.25);
+}
+
+/* 9x9 Grid Controls */
+.grid-controls { 
+  margin: 1.5rem 0; 
+  padding: 1.5rem; 
+  background: rgba(255,255,255,0.05); 
+  border-radius: 12px; 
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+.grid-controls h3 { 
+  margin: 0 0 1rem 0; 
+  color: var(--primary); 
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.grid-url { 
+  display: flex; 
+  gap: 0.75rem; 
+  margin-bottom: 0.75rem; 
+  align-items: center; 
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+}
+
+.grid-url input { 
+  flex: 1; 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
+  background: rgba(255,255,255,0.1); 
+  color: white; 
+  font-size: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+.grid-url button { 
+  width: 60px; 
+  height: 42px;
+  padding: 0;
+  background: var(--danger); 
+  color: white;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-url button:hover {
+  background: #c82333;
+}
+
+.add-url-btn {
+  background: var(--secondary);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  width: auto;
+}
+
+.add-url-btn:hover {
+  background: #5e37a6;
+}
+
+.grid-actions { 
+  display: flex; 
+  gap: 1rem; 
+  margin-top: 1rem; 
+  flex-wrap: wrap;
+}
+
+/* Devices Grid */
+.devices-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+  gap: 1.5rem; 
+  margin-top: 1.5rem; 
+}
+
+/* Device Card */
+.device-card { 
+  background: var(--card-bg); 
+  padding: 1.5rem; 
+  border-radius: 12px; 
+  transition: all 0.3s ease;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.device-card:hover { 
+  transform: translateY(-4px); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  border-color: var(--primary);
+}
+
+.device-header { 
+  display: flex; 
+  justify-content: space-between; 
+  margin-bottom: 1rem; 
+  padding-bottom: 0.75rem; 
+  border-bottom: 1px solid var(--border); 
+}
+
+.device-name { 
+  font-size: 1.1rem; 
+  font-weight: 600; 
+  color: white;
+  margin: 0;
+}
+
+.status { 
+  padding: 0.4rem 0.8rem; 
+  border-radius: 20px; 
+  font-size: 0.8rem; 
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-online { 
+  background: var(--success); 
+  color: white;
+}
+
+.status-offline { 
+  background: var(--danger); 
+  color: white;
+}
+
+.device-info { 
+  margin: 1rem 0; 
+  font-size: 0.9rem; 
+  color: rgba(255,255,255,0.7); 
+  line-height: 1.6;
+}
+
+.device-info div {
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.device-info strong {
+  color: white;
+  min-width: 80px;
+  display: inline-block;
+}
+
+.content-assign { 
+  margin-top: 1rem; 
+  padding-top: 1rem; 
+  border-top: 1px solid var(--border); 
+}
+
+.content-assign input { 
+  width: 100%; 
+  padding: 0.75rem 1rem; 
+  border: 2px solid var(--border); 
+  border-radius: 8px; 
+  background: rgba(255,255,255,0.1); 
+  color: white; 
+  font-size: 1rem;
+  margin: 0.5rem 0;
+  backdrop-filter: blur(5px);
+}
+
+.content-assign input:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.15);
+}
+
+.cast-btn { 
+  background: var(--success); 
+  color: white; 
+  padding: 0.75rem 1.5rem; 
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.cast-btn:hover {
+  background: #157347;
+  transform: translateY(-1px);
+}
+
+/* Footer */
+.footer { 
+  background: rgba(0,0,0,0.5); 
+  color: rgba(255,255,255,0.7); 
+  text-align: center; 
+  padding: 1.5rem; 
+  font-size: 0.9rem; 
+  border-top: 1px solid var(--border); 
+  margin-top: auto;
+}
+</style>
 </head>
 <body>
 <!-- Header -->
@@ -82,38 +471,55 @@
       </div>
     </div>
 
-    <!-- 9x9 Grid Controls -->
-    <div class="grid-controls">
-      <h3>9x9 Picture-in-Picture Grid</h3>
-      <div id="gridUrls">
-        <div class="grid-url">
-          <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
-          <button onclick="removeUrl(0)">✕</button>
-        </div>
-      </div>
-      <button onclick="addUrlField()">+ Add URL</button>
-      <div class="grid-actions">
-        <button onclick="castToGrid()">Cast to 9x9 Grid</button>
-        <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
-        <select id="fullscreenTile">
-          <option value="0">Fullscreen Tile 1</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="devices-grid" id="devicesGrid">
-      <!-- Devices will be populated here -->
+  <!-- 9x9 Grid Controls -->
+  <div class="grid-controls">
+    <h3>9x9 Picture-in-Picture Grid</h3>
+    <div id="gridUrls">
+      <div class="grid-url">
+        <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
+        <button onclick="removeUrl(0)">✕</button>
+      </div>
     </div>
+    <button onclick="addUrlField()">+ Add URL</button>
+    <div class="grid-actions">
+      <button onclick="castToGrid()">Cast to 9x9 Grid</button>
+      <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
+      <select id="fullscreenTile">
+        <option value="0">Fullscreen Tile 1</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="devices-grid" id="devicesGrid">
+    <!-- Devices will be populated here -->
   </div>
 </div>
 
-<!-- Footer -->
-<footer class="footer">
-  <p>ADAM Enterprise Signage System &copy; 2025 | 
-     <a href="https://adamconsult.com" target="_blank">adamconsult.com</a> | 
-     Version 1.0.0</p>
-</footer>
 
+<script>
+// Place in a <script> tag in admin.html, at the top or in a relevant section
+var scheduleData = {
+  "schedules": [
+    {
+      "target": { "type": "region", "name": "Mumbai" },
+      "contentUrl": "https://cdn.example.com/ad1.mp4",
+      "startTime": "2025-10-14T08:00",
+      "endTime": "2025-10-14T10:00"
+    },
+    {
+      "target": { "type": "device", "id": "DEV-001" },
+      "contentUrl": "https://cdn.example.com/welcome.mp4",
+      "startTime": "2025-10-14T09:00",
+      "endTime": "2025-10-14T12:00"
+    }
+  ]
+};
+
+</script>
+
+
+  
 <script>
 // Mock device data - in production, this would come from API
 const devices = [
@@ -137,17 +543,18 @@ function initDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.id}</div>
+        <div>ID: ${device.deviceId || device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
+        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
-        <button onclick="assignContent('${device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
+        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -181,17 +588,18 @@ function filterDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.id}</div>
+        <div>ID: ${device.deviceId || device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
+        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
-        <button onclick="assignContent('${device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
+        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -527,3 +935,4 @@ window.onload = initDevices;
 
 </body>
 </html>
+
