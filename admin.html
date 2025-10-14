@@ -82,56 +82,38 @@
       </div>
     </div>
 
-
-
-  <!-- 9x9 Grid Controls -->
-  <div class="grid-controls">
-    <h3>9x9 Picture-in-Picture Grid</h3>
-    <div id="gridUrls">
-      <div class="grid-url">
-        <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
-        <button onclick="removeUrl(0)">✕</button>
+    <!-- 9x9 Grid Controls -->
+    <div class="grid-controls">
+      <h3>9x9 Picture-in-Picture Grid</h3>
+      <div id="gridUrls">
+        <div class="grid-url">
+          <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
+          <button onclick="removeUrl(0)">✕</button>
+        </div>
+      </div>
+      <button onclick="addUrlField()">+ Add URL</button>
+      <div class="grid-actions">
+        <button onclick="castToGrid()">Cast to 9x9 Grid</button>
+        <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
+        <select id="fullscreenTile">
+          <option value="0">Fullscreen Tile 1</option>
+        </select>
       </div>
     </div>
-    <button onclick="addUrlField()">+ Add URL</button>
-    <div class="grid-actions">
-      <button onclick="castToGrid()">Cast to 9x9 Grid</button>
-      <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
-      <select id="fullscreenTile">
-        <option value="0">Fullscreen Tile 1</option>
-      </select>
-    </div>
-  </div>
 
-  <div class="devices-grid" id="devicesGrid">
-    <!-- Devices will be populated here -->
+    <div class="devices-grid" id="devicesGrid">
+      <!-- Devices will be populated here -->
+    </div>
   </div>
 </div>
 
+<!-- Footer -->
+<footer class="footer">
+  <p>ADAM Enterprise Signage System &copy; 2025 | 
+     <a href="https://adamconsult.com" target="_blank">adamconsult.com</a> | 
+     Version 1.0.0</p>
+</footer>
 
-<script>
-// Place in a <script> tag in admin.html, at the top or in a relevant section
-var scheduleData = {
-  "schedules": [
-    {
-      "target": { "type": "region", "name": "Mumbai" },
-      "contentUrl": "https://cdn.example.com/ad1.mp4",
-      "startTime": "2025-10-14T08:00",
-      "endTime": "2025-10-14T10:00"
-    },
-    {
-      "target": { "type": "device", "id": "DEV-001" },
-      "contentUrl": "https://cdn.example.com/welcome.mp4",
-      "startTime": "2025-10-14T09:00",
-      "endTime": "2025-10-14T12:00"
-    }
-  ]
-};
-
-</script>
-
-
-  
 <script>
 // Mock device data - in production, this would come from API
 const devices = [
@@ -155,18 +137,17 @@ function initDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
+        <div>ID: ${device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -200,18 +181,17 @@ function filterDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
+        <div>ID: ${device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
