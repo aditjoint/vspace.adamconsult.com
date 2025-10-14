@@ -194,7 +194,7 @@ button:hover {
       <button onclick="connectToRemote()">Connect to Remote Device</button>
     </div>
   </div>
-</div>
+
 
 <script>
 let castSession = null;
@@ -452,6 +452,36 @@ function connectToRemote() {
     return;
   }
   
+  // Save to localStorage for future use
+  localStorage.setItem('remoteHost', host);
+  localStorage.setItem('remotePort', port);
+  
+  // Update Cast options
+  const context = cast.framework.CastContext.getInstance();
+  context.setOptions({
+    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+  });
+  
+  // Initialize cast with remote device
+  initializeCast();
+  
+  alert(`Attempting to connect to remote device at ${host}:${port}. Ensure port forwarding is configured on the remote network.`);
+}
+
+// Load saved remote settings on startup
+window.onload = function() {
+  const savedHost = localStorage.getItem('remoteHost');
+  const savedPort = localStorage.getItem('remotePort');
+  
+  if (savedHost) {
+    document.getElementById('remoteHost').value = savedHost;
+  }
+  if (savedPort) {
+    document.getElementById('remotePort').value = savedPort;
+  }
+};
+
   const context = cast.framework.CastContext.getInstance();
   context.setOptions({
     receiverApplicationId: 'YOUR_CUSTOM_APP_ID',
