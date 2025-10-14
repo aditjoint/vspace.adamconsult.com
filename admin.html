@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADAM Enterprise Signage - Admin Panel</title>
+<!-- Cast SDK -->
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
 <style>
 :root { 
   --primary: #0d6efd; 
@@ -471,20 +473,19 @@ body {
       </div>
     </div>
 
-
-  <!-- 9x9 Grid Controls -->
-  <div class="grid-controls">
-    <h3>9x9 Picture-in-Picture Grid</h3>
-    <div id="gridUrls">
-      <div class="grid-url">
-        <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
-        <button onclick="removeUrl(0)">✕</button>
+    <!-- 9x9 Grid Controls -->
+    <div class="grid-controls">
+      <h3>9x9 Picture-in-Picture Grid</h3>
+      <div id="gridUrls">
+        <div class="grid-url">
+          <input type="text" placeholder="Content URL for Tile 1 (e.g., YouTube, image, video)">
+          <button onclick="removeUrl(0)">✕</button>
+        </div>
       </div>
-    </div>
-    <button onclick="addUrlField()">+ Add URL</button>
-    <div class="grid-actions">
-      <button onclick="castToGrid()">Cast to 9x9 Grid</button>
-      <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
+      <button onclick="addUrlField()">+ Add URL</button>
+      <div class="grid-actions">
+        <button onclick="castToGrid()">Cast to 9x9 Grid</button>
+        <button onclick="castToGrid(true)">Cast to Grid with Fullscreen</button>
       <select id="fullscreenTile">
         <option value="0">Fullscreen Tile 1</option>
       </select>
@@ -496,29 +497,75 @@ body {
   </div>
 </div>
 
-
 <script>
-// Place in a <script> tag in admin.html, at the top or in a relevant section
-var scheduleData = {
-  "schedules": [
-    {
-      "target": { "type": "region", "name": "Mumbai" },
-      "contentUrl": "https://cdn.example.com/ad1.mp4",
-      "startTime": "2025-10-14T08:00",
-      "endTime": "2025-10-14T10:00"
-    },
-    {
-      "target": { "type": "device", "id": "DEV-001" },
-      "contentUrl": "https://cdn.example.com/welcome.mp4",
-      "startTime": "2025-10-14T09:00",
-      "endTime": "2025-10-14T12:00"
-    }
-  ]
+// Cast variables
+let castSession = null;
+let currentCastDevice = null;
+
+// Initialize Cast Framework
+window['__onGCastApiAvailable'] = function(isAvailable) {
+  if (isAvailable) {
+    initializeCastApi();
+  }
 };
 
-</script>
+function initializeCastApi() {
+  const context = cast.framework.CastContext.getInstance();
+  context.setOptions({
+    receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+    autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+  });
 
-<script>
+  context.addEventListener(
+    cast.framework.CastContextEventType.SESSION_STATE_CHANGED,
+    (event) => {
+      switch (event.sessionState) {
+        case cast.framework.SessionState.SESSION_STARTED:
+          castSession = event.session;
+          currentCastDevice = event.session.getCastDevice();
+          console.log('Cast session started:', currentCastDevice.friendlyName);
+          break;
+        case cast.framework.SessionState.SESSION_ENDED:
+          castSession = null;
+          currentCastDevice = null;
+          console.log('Cast session ended');
+          break;
+      }
+    }
+  );
+}
+
+function initializeCast() {
+  const context = cast.framework.CastContext.getInstance();
+  context.requestSession().then(
+    () => {
+      console.log('Cast session request successful');
+    },
+    (error) => {
+      console.error('Error requesting cast session:', error);
+      alert('Error connecting to device. Check that your Google TV is on the same network and Chromecast is enabled.');
+    }
+  );
+}
+
+// Add Cast button to header after DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Only add if not already added
+  if (!document.querySelector('.cast-btn-header')) {
+    document.querySelector('.header').insertAdjacentHTML('beforeend', `
+      <div style="margin-left: 20px;">
+        <button onclick="initializeCast()" class="btn btn-primary cast-btn-header">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M15.985 8.5H13.61a4.5 4.5 0 0 0-8.922 0H2.015a.5.5 0 0 0-.494.57L3.977 16.1a.5.5 0 0 0 .494.4H11.53a.5.5 0 0 0 .494-.4l2.456-7.03a.5.5 0 0 0-.494-.57z"/>
+            <path d="M10.5 8.5a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+          </svg>
+          Cast
+        </button>
+      </div>
+    `);
+  }
+});
+
 // Mock device data - in production, this would come from API
 const devices = [
   { id: 'DEV-001', name: 'Corporate Lobby Display', state: 'Maharashtra', region: 'Mumbai Metro', location: 'Corporate Office', language: 'en', status: 'online', ip: '192.168.1.101', model: 'Chromebox' },
@@ -541,18 +588,17 @@ function initDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
+        <div>ID: ${device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -586,18 +632,17 @@ function filterDevices() {
         <span class="status ${device.status}">${device.status}</span>
       </div>
       <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
+        <div>ID: ${device.id}</div>
         <div>Model: ${device.model}</div>
         <div>IP: ${device.ip}</div>
         <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
         <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
       </div>
       <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
+        <input type="text" placeholder="Content URL or YouTube" id="content-${device.id}">
+        <button onclick="assignContent('${device.id}')">Assign</button>
       </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
+      <button class="cast-wall" onclick="castToDevice('${device.id}')">Cast to Device</button>
     `;
     grid.appendChild(card);
   });
@@ -621,8 +666,41 @@ function castToDevice(deviceId) {
     alert('Device is offline or not found');
     return;
   }
-  // In production, this would use Cast SDK
-  alert(`Casting to ${device.name} (${device.id})`);
+
+  // Initialize cast if not already done
+  if (!castSession) {
+    initializeCast();
+    alert('Please select your Chromecast device from the Google Cast icon that appeared.');
+    return;
+  }
+
+  const contentUrl = document.getElementById(`content-${deviceId}`).value.trim();
+  if (!contentUrl) {
+    alert('Please enter a URL in the content field');
+    return;
+  }
+
+  // Determine content type
+  let contentType = 'video/mp4';
+  if (contentUrl.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
+    contentType = 'image/jpeg';
+  } else if (contentUrl.match(/\.(mp3|wav|ogg)$/i)) {
+    contentType = 'audio/mpeg';
+  }
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(contentUrl, contentType);
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+  request.autoplay = true;
+
+  castSession.loadMedia(request).then(
+    () => {
+      alert(`Casting to ${device.name} (${device.id})`);
+    },
+    (error) => {
+      console.error('Error loading media:', error);
+      alert('Error casting content. Check the URL format and ensure the content is publicly accessible.');
+    }
+  );
 }
 
 // Cast to wall (all filtered devices)
@@ -644,9 +722,35 @@ function castToWall() {
     alert('No online devices found in the selected filters');
     return;
   }
-  
-  // In production, this would use Cast SDK to cast to multiple devices
-  alert(`Casting to wall: ${onlineDevices.length} online devices`);
+
+  // Initialize cast if not already done
+  if (!castSession) {
+    initializeCast();
+    alert('Please select your Chromecast device from the Google Cast icon that appeared.');
+    return;
+  }
+
+  // For demo purposes, cast to the first online device
+  const device = onlineDevices[0];
+  const contentUrl = document.getElementById(`content-${device.id}`).value.trim();
+  if (!contentUrl) {
+    alert('Please enter a URL in the content field for at least one device');
+    return;
+  }
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(contentUrl, 'video/mp4');
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+  request.autoplay = true;
+
+  castSession.loadMedia(request).then(
+    () => {
+      alert(`Casting to wall: ${onlineDevices.length} devices (using ${device.name} as primary display)`);
+    },
+    (error) => {
+      console.error('Error loading media:', error);
+      alert('Error casting to wall');
+    }
+  );
 }
 
 // Add URL field for grid
@@ -715,14 +819,40 @@ function castToGrid(withFullscreen = false) {
     return;
   }
   
+  // Initialize cast if not already done
+  if (!castSession) {
+    initializeCast();
+    alert('Please select your Chromecast device from the Google Cast icon that appeared.');
+    return;
+  }
+
   const fullscreenTile = withFullscreen ? parseInt(document.getElementById('fullscreenTile').value) : undefined;
   
-  // In production, this would use Cast SDK
-  const message = withFullscreen ? 
-    `Casting to 9x9 grid with ${urls.length} sources. Fullscreen on Tile ${fullscreenTile + 1}` :
-    `Casting to 9x9 grid with ${urls.length} sources`;
+  const customData = {
+    gridMode: 'pip9x9',
+    urls: urls,
+    timestamp: new Date().toISOString(),
+    fullscreenTile: fullscreenTile
+  };
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(
+    window.location.origin + '/receiver.html',
+    'text/html'
+  );
   
-  alert(message);
+  const request = new chrome.cast.media.LoadRequest(mediaInfo);
+  request.customData = customData;
+
+  castSession.loadMedia(request).then(
+    () => {
+      console.log('Grid loaded successfully');
+      alert(`Grid cast successfully with ${urls.length} sources!`);
+    },
+    (error) => {
+      console.error('Error loading grid:', error);
+      alert('Error casting grid. Ensure receiver.html is properly hosted and accessible.');
+    }
+  );
 }
 
 // Refresh devices (simulated)
@@ -765,7 +895,6 @@ if (typeof BroadcastChannel !== 'undefined') {
   };
 }
 
-
 // Add setup link to header
 document.querySelector('.header').insertAdjacentHTML('beforeend', `
   <div style="margin-left: 20px;">
@@ -800,7 +929,7 @@ function openSetup() {
           </select>
         </div>
         <div style="margin-bottom: 15px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: bold;">Location</label>
+          <label style="display -- block; margin-bottom: 5px; font-weight: bold;">Location</label>
           <select id="setupLocation" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
             <option value="Corporate Office" ${localStorage.getItem('location') === 'Corporate Office' ? 'selected' : ''}>Corporate Office</option>
             <option value="Retail Store" ${localStorage.getItem('location') === 'Retail Store' ? 'selected' : ''}>Retail Store</option>
@@ -845,36 +974,6 @@ function closeSetup() {
     overlay.remove();
   }
 }
-
-// Add device ID to the device card display
-function initDevices() {
-  const grid = document.getElementById('devicesGrid');
-  grid.innerHTML = '';
-  devices.forEach(device => {
-    const card = document.createElement('div');
-    card.className = 'device-card';
-    card.innerHTML = `
-      <div class="device-header">
-        <strong>${device.name}</strong>
-        <span class="status ${device.status}">${device.status}</span>
-      </div>
-      <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
-        <div>Model: ${device.model}</div>
-        <div>IP: ${device.ip}</div>
-        <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
-        <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
-      </div>
-      <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
-      </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
-    `;
-    grid.appendChild(card);
-  });
-}
 </script>
 
 <!-- Footer -->
@@ -885,51 +984,17 @@ function initDevices() {
 </footer>
 
 <script>
-// Rest of the JavaScript remains the same as previous implementation
-// Mock device data - in production, this would come from API
-const devices = [
-  { id: 'DEV-001', name: 'Corporate Lobby Display', state: 'Maharashtra', region: 'Mumbai Metro', location: 'Corporate Office', language: 'en', status: 'online', ip: '192.168.1.101', model: 'Chromebox' },
-  { id: 'DEV-002', name: 'Factory Floor Display', state: 'Maharashtra', region: 'Mumbai Metro', location: 'Factory', language: 'hi', status: 'online', ip: '192.168.1.102', model: 'Chromebit' },
-  { id: 'DEV-003', name: 'Retail Store Window', state: 'Maharashtra', region: 'Pune', location: 'Retail Store', language: 'mr', status: 'online', ip: '192.168.1.103', model: 'Chromecast' },
-  { id: 'DEV-004', name: 'Conference Room TV', state: 'Tamil Nadu', region: 'Chennai', location: 'Corporate Office', language: 'ta', status: 'offline', ip: '192.168.1.104', model: 'Chromecast' },
-  { id: 'DEV-005', name: 'Cafeteria Display', state: 'Karnataka', region: 'Bangalore', location: 'Corporate Office', language: 'en', status: 'online', ip: '192.168.1.105', model: 'Chromebox' }
-];
-
-// Initialize devices grid
-function initDevices() {
-  const grid = document.getElementById('devicesGrid');
-  grid.innerHTML = '';
-  devices.forEach(device => {
-    const card = document.createElement('div');
-    card.className = 'device-card';
-    card.innerHTML = `
-      <div class="device-header">
-        <strong>${device.name}</strong>
-        <span class="status ${device.status}">${device.status}</span>
-      </div>
-      <div class="device-info">
-        <div>ID: ${device.deviceId || device.id}</div>
-        <div>Model: ${device.model}</div>
-        <div>IP: ${device.ip}</div>
-        <div>Location: ${device.state}, ${device.region}, ${device.location}</div>
-        <div>Language: ${device.language}</div>
-        ${device.registeredAt ? `<div>Registered: ${new Date(device.registeredAt).toLocaleString()}</div>` : ''}
-      </div>
-      <div class="content-assign">
-        <input type="text" placeholder="Content URL or YouTube" id="content-${device.deviceId || device.id}">
-        <button onclick="assignContent('${device.deviceId || device.id}')">Assign</button>
-      </div>
-      <button class="cast-wall" onclick="castToDevice('${device.deviceId || device.id}')">Cast to Device</button>
-    `;
-    grid.appendChild(card);
-  });
-    // Initialize grid controls
-  updateFullscreenOptions();
-}
-
 // Initialize on load
-window.onload = initDevices;
+window.onload = function() {
+  initDevices();
+  // Initialize Cast SDK
+  if (window['__onGCastApiAvailable']) {
+    window['__onGCastApiAvailable'](true);
+  }
+};
 </script>
 
 </body>
 </html>
+
+
