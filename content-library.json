@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "id": "content-001",
+      "name": "Company Promo",
+      "url": "https://cdn.example.com/promo.mp4",
+      "type": "video",
+      "tags": ["promo", "corporate"],
+      "createdAt": "2025-10-14T06:00:00Z"
+    },
+    {
+      "id": "content-002",
+      "name": "Weather Dashboard",
+      "url": "https://dashboard.example.com/weather",
+      "type": "web",
+      "tags": ["dashboard", "live"],
+      "createdAt": "2025-10-14T06:00:00Z"
+    }
+  ]
+}
