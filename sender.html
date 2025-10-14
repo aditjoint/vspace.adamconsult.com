@@ -101,6 +101,18 @@ button:hover {
   border-radius: 6px;
   border-left: 4px solid #0d6efd;
 }
+.content-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  min-height: 100px;
+}
+.content-preview img, .content-preview video {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+}
 </style>
 </head>
 <body>
@@ -119,6 +131,9 @@ button:hover {
   <div class="section">
     <h2>Cast Single Content</h2>
     <input type="text" id="singleUrl" placeholder="Enter URL (YouTube, image, video)">
+    <div class="content-preview" id="contentPreview">
+      <p>Content preview will appear here</p>
+    </div>
     <button class="cast-btn" onclick="castSingle()">Cast Single Content</button>
   </div>
 
@@ -246,8 +261,66 @@ function castSingle() {
     return;
   }
 
-  const mediaInfo = new chrome.cast.media.MediaInfo(url, 'video/mp4');
+  let contentType = 'video/mp4';
+  let contentUrl = url;
+  
+  // Handle YouTube URLs
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let videoId = '';
+    if (url.includes('v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    
+    if (videoId) {
+      // Use custom receiver to handle YouTube
+      const customData = {
+        mode: 'youtube',
+        videoId: videoId,
+        autoplay: true,
+        controls: true
+      };
+      
+      const mediaInfo = new chrome.cast.media.MediaInfo(
+        window.location.origin + '/receiver.html',
+        'text/html'
+      );
+      
+      const request = new chrome.cast.media.LoadRequest(mediaInfo);
+      request.customData = customData;
+      
+      castSession.loadMedia(request).then(
+        () => {
+          console.log('YouTube video cast successfully');
+          alert('YouTube video casting!');
+        },
+        (error) => {
+          console.error('Error casting YouTube:', error);
+          alert('Error casting YouTube video');
+        }
+      );
+      return;
+    }
+  }
+  
+  // Detect content type from URL
+  if (url.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
+    contentType = 'image/jpeg';
+  } else if (url.match(/\.(mp3|wav|ogg)$/i)) {
+    contentType = 'audio/mpeg';
+  } else if (url.match(/\.(webm)$/i)) {
+    contentType = 'video/webm';
+  } else if (url.match(/\.(m3u8)$/i)) {
+    contentType = 'application/x-mpegURL';
+  }
+
+  const mediaInfo = new chrome.cast.media.MediaInfo(contentUrl, contentType);
   const request = new chrome.cast.media.LoadRequest(mediaInfo);
+
+  // Add autoplay and loop for better user experience
+  request.autoplay = true;
+  request.repeatMode = 'all';
 
   castSession.loadMedia(request).then(
     () => {
@@ -256,10 +329,54 @@ function castSingle() {
     },
     (error) => {
       console.error('Error loading media:', error);
-      alert('Error casting content. Check the URL format and ensure the content is accessible.');
+      alert('Error casting content. Check URL format and ensure content is publicly accessible via HTTPS.');
     }
   );
 }
+
+// Preview content before casting
+document.getElementById('singleUrl').addEventListener('blur', function() {
+  const url = this.value.trim();
+  const preview = document.getElementById('contentPreview');
+  
+  if (!url) {
+    preview.innerHTML = '<p>Content preview will appear here</p>';
+    return;
+  }
+  
+  preview.innerHTML = '<p>Analyzing content...</p>';
+  
+  // Handle YouTube preview
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let videoId = '';
+    if (url.includes('v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    
+    if (videoId) {
+      preview.innerHTML = `
+        <div style="text-align: center;">
+          <img src="https://img.youtube.com/vi/${videoId}/hqdefault.jpg" style="max-width: 100%; border-radius: 4px;">
+          <p style="margin-top: 10px;">YouTube Video Preview</p>
+        </div>
+      `;
+    }
+  } 
+  // Handle image preview
+  else if (url.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
+    preview.innerHTML = `<img src="${url}" alt="Image preview">`;
+  }
+  // Handle video preview
+  else if (url.match(/\.(mp4|webm|ogg|m3u8)$/i)) {
+    preview.innerHTML = `<video controls><source src="${url}" type="video/mp4">Your browser does not support the video tag.</video>`;
+  }
+  // Generic preview
+  else {
+    preview.innerHTML = `<p>Content type will be determined at cast time</p>`;
+  }
+});
 
 function castGrid() {
   const inputs = document.querySelectorAll('#gridInputs input');
@@ -284,7 +401,8 @@ function castGrid() {
   const customData = {
     gridMode: 'pip9x9',
     urls: urls,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    autoplay: true
   };
 
   const mediaInfo = new chrome.cast.media.MediaInfo(
