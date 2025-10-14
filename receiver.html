@@ -65,11 +65,38 @@ body, html {
   height: 100%;
   object-fit: contain;
 }
+/* Clock overlay for scheduled content */
+.clock-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 2000;
+}
+/* Schedule indicator */
+.schedule-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(13,110,253,0.8);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 2000;
+}
 </style>
 </head>
 <body>
 <div class="grid-container" id="grid"></div>
 <div id="fullscreen"></div>
+<div class="clock-overlay" id="clock"></div>
+<div class="schedule-indicator" id="scheduleInfo" style="display:none;"></div>
 
 <script>
 const context = cast.framework.CastReceiverContext.getInstance();
@@ -77,6 +104,8 @@ const playerManager = context.getPlayerManager();
 const grid = document.getElementById('grid');
 const tiles = [];
 const fullscreen = document.getElementById('fullscreen');
+const clock = document.getElementById('clock');
+const scheduleInfo = document.getElementById('scheduleInfo');
 
 // Create 9x9 grid
 for (let i = 0; i < 81; i++) {
@@ -88,10 +117,35 @@ for (let i = 0; i < 81; i++) {
   tiles.push(tile);
 }
 
+// Clock display
+function updateClock() {
+  const now = new Date();
+  clock.textContent = now.toLocaleTimeString();
+  setTimeout(updateClock, 1000);
+}
+updateClock();
+
+// Current schedule
+let currentSchedule = null;
+let scheduleTimer = null;
+
+// Handle load requests
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, request => {
   console.log('Load request:', request);
   
+  // Clear any existing schedule
+  if (scheduleTimer) {
+    clearTimeout(scheduleTimer);
+    scheduleTimer = null;
+  }
+  
+  // Hide schedule info
+  scheduleInfo.style.display = 'none';
+  currentSchedule = null;
+  
+  // Handle different content types
   if (request.customData && request.customData.gridMode === 'pip9x9') {
+    // 9x9 Grid mode
     tiles.forEach(tile => tile.innerHTML = '');
     
     if (request.customData.urls && Array.isArray(request.customData.urls)) {
@@ -101,7 +155,13 @@ playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, re
         }
       });
     }
+    
+  } else if (request.customData && request.customData.scheduleId) {
+    // Scheduled content mode
+    handleScheduledContent(request.customData);
+    
   } else if (request.media && request.media.contentId) {
+    // Single content mode
     tiles.forEach(tile => tile.innerHTML = '');
     fullscreen.style.display = 'block';
     loadContent(fullscreen, request.media.contentId);
@@ -110,13 +170,62 @@ playerManager.setMessageInterceptor(cast.framework.messages.MessageType.LOAD, re
   return request;
 });
 
+// Handle stop requests
 playerManager.setMessageInterceptor(cast.framework.messages.MessageType.STOP, request => {
   tiles.forEach(tile => tile.innerHTML = '');
   fullscreen.style.display = 'none';
   fullscreen.innerHTML = '';
+  
+  // Clear schedule
+  if (scheduleTimer) {
+    clearTimeout(scheduleTimer);
+    scheduleTimer = null;
+  }
+  scheduleInfo.style.display = 'none';
+  currentSchedule = null;
+  
   return request;
 });
 
+// Handle scheduled content
+function handleScheduledContent(scheduleData) {
+  // Clear current display
+  tiles.forEach(tile => tile.innerHTML = '');
+  fullscreen.style.display = 'none';
+  
+  // Display schedule info
+  scheduleInfo.textContent = `Schedule: ${scheduleData.name}`;
+  scheduleInfo.style.display = 'block';
+  
+  // Load content based on schedule
+  if (scheduleData.gridMapping) {
+    scheduleData.gridMapping.forEach(item => {
+      if (item.tile < tiles.length && item.contentUrl) {
+        loadContent(tiles[item.tile], item.contentUrl);
+      }
+    });
+  }
+  
+  // Set up schedule end
+  if (scheduleData.endTime) {
+    const end = new Date(scheduleData.endTime);
+    const now = new Date();
+    const delay = end.getTime() - now.getTime();
+    
+    if (delay > 0) {
+      scheduleTimer = setTimeout(() => {
+        // Clear schedule
+        tiles.forEach(tile => tile.innerHTML = '');
+        scheduleInfo.style.display = 'none';
+        currentSchedule = null;
+      }, delay);
+    }
+  }
+  
+  currentSchedule = scheduleData;
+}
+
+// Load content into container
 function loadContent(container, url) {
   container.innerHTML = '';
   
@@ -130,7 +239,7 @@ function loadContent(container, url) {
     
     if (videoId) {
       const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0`;
+      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1`;
       iframe.allow = 'autoplay; encrypted-media';
       iframe.frameBorder = '0';
       container.appendChild(iframe);
@@ -138,6 +247,8 @@ function loadContent(container, url) {
   } else if (url.match(/\.(jpeg|jpg|gif|png|bmp|webp)$/i)) {
     const img = document.createElement('img');
     img.src = url;
+    img.onload = () => console.log('Image loaded:', url);
+    img.onerror = () => console.error('Image failed to load:', url);
     container.appendChild(img);
   } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
     const video = document.createElement('video');
@@ -145,31 +256,70 @@ function loadContent(container, url) {
     video.autoplay = true;
     video.muted = true;
     video.loop = true;
+    video.playsInline = true;
+    video.onloadedmetadata = () => console.log('Video loaded:', url);
+    video.onerror = () => console.error('Video failed to load:', url);
     container.appendChild(video);
   } else if (url.includes('.m3u8')) {
     const video = document.createElement('video');
     video.autoplay = true;
     video.muted = true;
     video.loop = true;
+    video.playsInline = true;
     container.appendChild(video);
     
     if (Hls.isSupported()) {
       const hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('HLS stream loaded:', url);
+      });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error('HLS error:', data);
+      });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = url;
+      video.addEventListener('loadedmetadata', () => {
+        console.log('Native HLS loaded:', url);
+      });
     }
   } else {
     const iframe = document.createElement('iframe');
     iframe.src = url;
-    iframe.allow = 'autoplay';
+    iframe.allow = 'autoplay; fullscreen';
     iframe.frameBorder = '0';
+    iframe.style.border = 'none';
+    iframe.onload = () => console.log('Iframe loaded:', url);
+    iframe.onerror = () => console.error('Iframe failed to load:', url);
     container.appendChild(iframe);
   }
 }
 
+// Handle pause/resume
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PAUSE, request => {
+  // Pause all videos
+  document.querySelectorAll('video').forEach(video => {
+    if (!video.paused) {
+      video.pause();
+    }
+  });
+  return request;
+});
+
+playerManager.setMessageInterceptor(cast.framework.messages.MessageType.PLAY, request => {
+  // Resume all videos
+  document.querySelectorAll('video').forEach(video => {
+    if (video.paused) {
+      video.play().catch(e => console.error('Play error:', e));
+    }
+  });
+  return request;
+});
+
+// Start the receiver
 context.start();
 </script>
 </body>
 </html>
+
