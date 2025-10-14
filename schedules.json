@@ -1,0 +1,19 @@
+{
+  "schedules": [
+    {
+      "id": "sched-001",
+      "name": "Morning Lobby Display",
+      "startTime": "2025-10-14T06:00",
+      "endTime": "2025-10-14T12:00",
+      "target": {
+        "type": "zone",
+        "name": "Lobby Screens"
+      },
+      "gridMapping": [
+        { "tile": 0, "contentId": "content-001", "duration": 300 },
+        { "tile": 1, "contentId": "content-002", "duration": 600 }
+      ],
+      "active": true
+    }
+  ]
+}
