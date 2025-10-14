@@ -496,6 +496,30 @@ body {
   </div>
 </div>
 
+
+<script>
+// Place in a <script> tag in admin.html, at the top or in a relevant section
+var scheduleData = {
+  "schedules": [
+    {
+      "target": { "type": "region", "name": "Mumbai" },
+      "contentUrl": "https://cdn.example.com/ad1.mp4",
+      "startTime": "2025-10-14T08:00",
+      "endTime": "2025-10-14T10:00"
+    },
+    {
+      "target": { "type": "device", "id": "DEV-001" },
+      "contentUrl": "https://cdn.example.com/welcome.mp4",
+      "startTime": "2025-10-14T09:00",
+      "endTime": "2025-10-14T12:00"
+    }
+  ]
+};
+
+</script>
+
+
+  
 <script>
 // Mock device data - in production, this would come from API
 const devices = [
@@ -854,8 +878,6 @@ function initDevices() {
   });
 }
 </script>
-
-  
 
 <!-- Footer -->
 <footer class="footer">
