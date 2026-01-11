@@ -1,21 +1,28 @@
 {
+  "system_config": {
+    "version": "2.2.0",
+    "heartbeat_interval_seconds": 30,
+    "offline_mode": true,
+    "camera_host_id": "PASTE_YOUR_ID_HERE"
+  },
   "tiles": [
-    {"url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+2"},
-    {"url": "https://www.youtube.com/watch?v=9bZkp7q19f0"},
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+4"},
-    {"url": "https://www.youtube.com/watch?v=jNQXAC9IVRw"},
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+6"},
-    {"url": "https://www.youtube.com/watch?v=kJQP7kiw5Fk"},
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
-    {"url": "https://www.youtube.com/watch?v=60ItHLz5WEA"}
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
-    {"url": "https://www.youtube.com/watch?v=60ItHLz5WEA"}
-        {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
-    {"url": 
-          {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
-    {"url": "https://www.youtube.com/watch?v=60ItHLz5WEA"}
-    {"url": "https://via.placeholder.com/1920x1080.png?text=Tile+8"},
-    {"url": "https://www.youtube.com/watch?v=60ItHLz5WEA"}
+    { 
+      "id": "t1", 
+      "type": "usb", 
+      "url": "usb", 
+      "label": "Live Camera (Server Only)", 
+      "priority": 1 
+    },
+    { "type": "video", "url": "assets/3.mp4", "label": "Test-1" },
+    { "type": "video", "url": "assets/4.mp4", "label": "Test-2" },
+    { "type": "video", "url": "assets/5.mp4", "label": "Test-3" },
+    { "type": "video", "url": "assets/SAKSHAM.mp4", "label": "SAKSHAM-RIDC" },
+    { "type": "video", "url": "assets/Thief.mp4", "label": "Thief Detection" },
+    { "type": "ip_camera", "url": "http://192.168.1.100:8080/hls/stream.m3u8", "label": "IP CAM HLS" },
+    { "type": "image", "url": "https://via.placeholder.com/1920x1080.png?text=AD+SPACE", "label": "STATIC AD" },
+    { "type": "image", "url": "https://via.placeholder.com/1920x1080.png?text=Placeholder", "label": "Asset 1" },
+    { "type": "youtube", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "label": "YT CH 1" },
+    { "type": "youtube", "url": "https://www.youtube.com/watch?v=30qzmLteHvY", "label": "Channel 4" },
+    { "type": "dash", "url": "https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd", "label": "Dash Feed" }
   ]
 }
