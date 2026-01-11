@@ -1,109 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADAM Signage Player</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<style>
-body, html { 
-  margin: 0; 
-  padding: 0; 
-  width: 100%; 
-  height: 100%; 
-  overflow: hidden; 
-  background: #000; 
-}
-.grid-container { 
-  display: grid; 
-  grid-template-columns: repeat(9, 1fr); 
-  grid-template-rows: repeat(9, 1fr); 
-  width: 100%; 
-  height: 100%; 
-  gap: 2px; 
-}
-.grid-item { 
-  background: #111; 
-  position: relative; 
-  overflow: hidden; 
-}
-.grid-item video, 
-.grid-item img, 
-.grid-item iframe { 
-  width: 100%; 
-  height: 100%; 
-  object-fit: contain; 
-}
-.grid-item::after {
-  content: attr(data-index);
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: rgba(0,0,0,0.8);
-  color: #0d6efd;
-  font-size: 12px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADAM Signage - Enterprise Player</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(9, 1fr); 
+            grid-template-rows: repeat(9, 1fr); 
+            width: 100%; height: 100%; gap: 2px; 
+        }
+        .grid-item { background: #111; position: relative; overflow: hidden; cursor: pointer; }
+        .grid-item video, .grid-item img, .grid-item iframe { width: 100%; height: 100%; object-fit: contain; border: none; }
+        
+        .grid-item::after {
+            content: attr(data-label); 
+            position: absolute; bottom: 4px; left: 4px;
+            background: rgba(0,0,0,0.8); color: #0d6efd;
+            font-size: 10px; padding: 2px 4px; border-radius: 3px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* HIDE STATUS PANEL COMPLETELY */
+        #status-panel { display: none !important; }
+    </style>
 </head>
 <body>
+
+<div id="status-panel">
+    <div id="log-console"></div>
+</div>
+
 <div class="grid-container" id="grid"></div>
 
 <script>
-const grid = document.getElementById('grid');
-const tiles = [];
-
-// Create 9x9 grid
-for (let i = 0; i < 81; i++) {
-  const tile = document.createElement('div');
-  tile.className = 'grid-item';
-  tile.setAttribute('data-index', i + 1);
-  grid.appendChild(tile);
-  tiles.push(tile);
+// --- SILENT LOGGER ---
+function log(msg, isError = false) {
+    if(isError) console.error(`[ADAM] ${msg}`);
+    else console.log(`[ADAM] ${msg}`);
 }
 
-// Load playlist
-fetch('playlist.json')
-  .then(res => res.json())
-  .then(playlist => {
-    playlist.tiles.forEach((item, index) => {
-      if (index < 81 && item.url) {
-        loadContent(tiles[index], item.url);
-      }
-    });
-  })
-  .catch(err => console.error('Error loading playlist:', err));
+// 1. IDENTITY
+const DEVICE_ID = localStorage.getItem('adam_device_id') || 'DEV-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+localStorage.setItem('adam_device_id', DEVICE_ID);
 
-function loadContent(container, url) {
-  // Same loadContent function as receiver.html
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    let videoId = '';
-    if (url.includes('v=')) {
-      videoId = url.split('v=')[1].split('&')[0];
-    } else if (url.includes('youtu.be/')) {
-      videoId = url.split('youtu.be/')[1].split('?')[0];
+// 2. SETUP GRID
+const grid = document.getElementById('grid');
+const tiles = [];
+for (let i = 0; i < 81; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'grid-item';
+    tile.setAttribute('data-label', i + 1);
+    tile.onclick = function() {
+        if (!document.fullscreenElement) this.requestFullscreen().catch(e=>{});
+        else document.exitFullscreen();
+    };
+    grid.appendChild(tile);
+    tiles.push(tile);
+}
+
+// 3. BROADCAST VARIABLES
+let CAMERA_HOST_ID = null;
+let peer = null;
+let localStream = null;
+
+// 4. LOAD CONFIG
+fetch('playlist.json')
+    .then(r => r.json())
+    .then(data => {
+        if (data.system_config) {
+            CAMERA_HOST_ID = data.system_config.camera_host_id;
+        }
+        
+        if(DEVICE_ID === CAMERA_HOST_ID) console.log("MODE: SERVER (Broadcaster)");
+        else console.log("MODE: CLIENT (Viewer)");
+
+        if (data.tiles) {
+            data.tiles.forEach((item, index) => {
+                if(index < 81 && item.url) {
+                    tiles[index].setAttribute('data-label', item.label || "Media");
+                    loadTile(tiles[index], item);
+                }
+            });
+        }
+    })
+    .catch(e => console.error("JSON Error: " + e.message));
+
+
+// 5. WEBRTC ENGINE (PeerJS)
+function initBroadcast(isHost) {
+    const PEER_ID = "adam-signage-" + CAMERA_HOST_ID.replace(/[^a-zA-Z0-9]/g, ''); 
+
+    if (isHost) {
+        // SERVER LOGIC
+        peer = new Peer(PEER_ID); 
+        peer.on('open', (id) => console.log(`Broadcasting started as: ${id}`));
+        peer.on('call', (call) => {
+            if (localStream) call.answer(localStream);
+        });
+    } else {
+        // CLIENT LOGIC
+        peer = new Peer(); 
+        peer.on('open', (id) => {
+            console.log(`Connected to Cloud. Dialing Host: ${PEER_ID}...`);
+            setTimeout(() => {
+                const conn = peer.call(PEER_ID, createSilentStream());
+                conn.on('stream', (remoteStream) => {
+                    console.log("SIGNAL RECEIVED! 🎥");
+                    const video = tiles[0].querySelector('video');
+                    if(video) {
+                        video.srcObject = remoteStream;
+                        video.play().catch(e => console.log("Autoplay blocked"));
+                    }
+                });
+                setTimeout(() => {
+                    if(!conn.open && !document.getElementById('video')) console.log("Retrying connection...");
+                }, 5000);
+            }, 1000);
+        });
     }
-    
-    if (videoId) {
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1`;
-      iframe.allow = 'autoplay; encrypted-media';
-      container.appendChild(iframe);
+}
+
+function createSilentStream() {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const dst = osc.connect(ctx.createMediaStreamDestination());
+    osc.start();
+    return dst.stream;
+}
+
+// 6. CONTENT LOADER
+async function loadTile(container, item) {
+    const { url, type } = item;
+
+    if (type === 'usb' || url === 'usb') {
+        const video = document.createElement('video');
+        video.autoplay = true; video.muted = true; video.playsinline = true;
+        container.appendChild(video);
+
+        if (DEVICE_ID === CAMERA_HOST_ID) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                localStream = stream;
+                video.srcObject = stream;
+                video.muted = true; 
+                console.log("Camera Active. Starting Broadcast...");
+                initBroadcast(true);
+            } catch (e) {
+                console.error("Camera Blocked! check HTTPS");
+                container.innerHTML = "<div style='color:red;padding:10px;'>CAM BLOCKED</div>";
+            }
+        } else {
+            console.log("Initializing Viewer Mode...");
+            initBroadcast(false);
+            container.setAttribute('data-label', 'Connecting...');
+        }
     }
-  } else if (url.match(/\.(jpeg|jpg|gif|png|bmp)$/i)) {
-    const img = document.createElement('img');
-    img.src = url;
-    container.appendChild(img);
-  } else if (url.match(/\.(mp4|webm|ogg)$/i)) {
-    const video = document.createElement('video');
-    video.src = url;
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-    container.appendChild(video);
-  }
+    else if (type === 'ip_camera' || url.includes('.m3u8')) {
+        const v = document.createElement('video');
+        v.autoplay = true; v.muted = true;
+        container.appendChild(v);
+        if(Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(url);
+            hls.attachMedia(v);
+        }
+    }
+    else if (url.includes('youtube')) {
+        let vId = url.split('v=')[1]?.split('&')[0];
+        container.innerHTML = `<iframe src="https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${vId}" allow="autoplay"></iframe>`;
+    }
+    else if (type === 'video' || url.match(/\.(mp4|webm)$/i)) {
+        const v = document.createElement('video');
+        v.src = url; v.autoplay = true; v.loop = true; v.muted = true;
+        container.appendChild(v);
+    }
+    else if (type === 'image' || url.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        const img = document.createElement('img');
+        img.src = url;
+        container.appendChild(img);
+    }
 }
 </script>
 </body>
